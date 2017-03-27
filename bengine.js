@@ -441,7 +441,8 @@ var countBlocks = function() {
 */
 var generateBlock = function(bid,btype) {
 	var block = document.createElement('div');
-	block.setAttribute('class','bengine-block-wrapper');
+	block.setAttribute('class','block-engine-wrapper');
+	block.setAttribute('data-btype',btype);
 	block.setAttribute('id','bengine-a' + bid);
 
 	return block;
@@ -882,7 +883,7 @@ var saveBlocks = function(which) {
 		var i = 0;
 		while(blockCount >= bid) {
 			/* get the block type */
-			var btype = document.getElementById('bengine-a' + bid).className;
+			var btype = document.getElementById('bengine-a' + bid).getAttribute('data-btype');
 			blockType[i] = btype;
 
 			/* get the block content */
