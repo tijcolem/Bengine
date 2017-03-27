@@ -18,21 +18,27 @@ If you would like to contribute to this project, please consider coding the foll
 
 Create these objects. You'll need to add an extensible to the `blockExtensibles` object. You can find code for a simple one at [wisepool playground](http://wisepool.io/play).
 
-`var blockExtensibles = {};`  
-`var blockGlobals = {};`  
-`var blockCustomFunctions = {};`  
-`var blockOptions = { enableSave:false };`  
+```javascript
+var blockExtensibles = {};
+var blockGlobals = {};  
+var blockCustomFunctions = {};  
+var blockOptions = { enableSave:false };
+```
 
 Create a div for your block engine and append it to the document.
 
-`var div = document.createElement("div");`  
-`div.id = 'engineID';`  
-`body.appendChild(div);`  
+```javascript
+var div = document.createElement("div");
+div.id = 'engineID';
+body.appendChild(div);
+```
 
 Create & start your block bengine.
 
-`var myEngine = new Bengine(blockExtensibles,blockGlobals,blockCustomFunctions,blockOptions);`  
-`myEngine.blockEngineStart("bengineID",["",0,0],[]);`
+```javascript
+var myEngine = new Bengine(blockExtensibles,blockGlobals,blockCustomFunctions,blockOptions);
+myEngine.blockEngineStart("bengineID",["",0,0],[]);
+```
 
 ## Bengine HTML Prefixes
 
