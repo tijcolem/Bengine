@@ -441,7 +441,7 @@ var countBlocks = function() {
 */
 var generateBlock = function(bid,btype) {
 	var block = document.createElement('div');
-	block.setAttribute('class','block-engine-wrapper');
+	block.setAttribute('class','bengine-block-wrapper');
 	block.setAttribute('data-btype',btype);
 	block.setAttribute('id','bengine-a' + bid);
 
@@ -894,8 +894,8 @@ var saveBlocks = function(which) {
 		}
 
 		/* merge mediaType & mediaContent arrays into default comma-separated strings */
-		var types = blockType.join();
-		var contents = blockContent.join();
+		var types = blockType.join("@^@");
+		var contents = blockContent.join("@^@");
 	}
 
 	/* create the url destination for the ajax request */
