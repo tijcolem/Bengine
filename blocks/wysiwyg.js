@@ -3,6 +3,9 @@ extensibles.xtext = new function xtext() {
 	this.name = "text";
 	this.upload = false;
 
+	var xtextObj = this;
+	var blocklimit = 4095;
+
 	var parseBlock = function(blockText) {
 		var element = document.createElement('div');
 		element.innerHTML = blockText.replace(/</g,"@@LT").replace(/>/g,"@@RT").replace(/<br>/g,"@@BR");
@@ -17,7 +20,6 @@ extensibles.xtext = new function xtext() {
 		/* WYSIWIG uses iframe */
 		var textBlock = document.createElement("iframe");
 		textBlock.setAttribute("class","xTex");
-		textBlock.setAttribute("maxlength","1023");
 
 		block.appendChild(textBlock);
 
@@ -56,6 +58,21 @@ extensibles.xtext = new function xtext() {
 				iframe.onkeydown = objCopy.f.detectKey.bind(null,retblock);
 			}
 
+			/* set limit on paste */
+			iframe.onpaste = function(event) {
+				var ptext;
+				if (window.clipboardData && window.clipboardData.getData) {
+					ptext = window.clipboardData.getData('Text');
+				} else if (event.clipboardData && event.clipboardData.getData) {
+					ptext = event.clipboardData.getData('text/plain');
+				}
+
+				if((this.children[0].childNodes[1].innerHTML.length + ptext.length) > blocklimit) {
+					return false;
+				} else {
+					return true;
+				}
+			};
 		},1);
 
 		return block;
@@ -129,87 +146,92 @@ extensibles.xtext = new function xtext() {
 				none
 		*/
 		detectKey: function detectKey(iframe,event) {
-
-			/* p : plain */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 80) {
-				iframe.contentDocument.execCommand('removeFormat',false,null);
-			}
-			/* b : bold */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 66) {
-				iframe.contentDocument.execCommand('bold',false,null);
-			}
-			/* i : italics */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 73) {
-				iframe.contentDocument.execCommand('italic',false,null);
-			}
-			/* h : highlight */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 72) {
-				iframe.contentDocument.execCommand('backColor',false,"yellow");
-			}
-			/* l : list */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 76) {
-				iframe.contentDocument.execCommand('insertUnorderedList',false,null);
-			}
-			/* + : superscript */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 187) {
-				iframe.contentDocument.execCommand('superscript',false,null);
-			}
-			/* - : subscript */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 189) {
-				iframe.contentDocument.execCommand('subscript',false,null);
-			}
-			/* j : justify left */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 74) {
-				iframe.contentDocument.execCommand('justifyLeft',false,null);
-			}
-			/* f : justify full */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 70) {
-				iframe.contentDocument.execCommand('justifyFull',false,null);
-			}
-			/* tab : indent */
-			if(event.keyCode === 9) {
-				iframe.contentDocument.execCommand('insertHTML',false,'&nbsp;&nbsp;&nbsp;&nbsp;');
-			}
-			/* a - anchor */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 65) {
-				function callback(event,str) {
-					if(event) {
-						if (str.indexOf("http://") < 0 && str.indexOf("https://") < 0) {
-							iframe.contentDocument.execCommand('createLink',false,"http://" + str);
-						} else if (str.indexOf("http://") === 0 || str.indexOf("https://") === 0) {
-							iframe.contentDocument.execCommand('createLink',false,str);
-						} else {
-							alertify.log("Not A Valid Link!","error");
-						}
-					} else { /* cancel */ }
+			/* set limit */
+			// iframe . document . html . body
+			if(event.keyCode !== 8 && iframe.contentDocument.children[0].childNodes[1].innerHTML.length > blocklimit) {
+				event.preventDefault();
+			} else {
+				/* p : plain */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 80) {
+					iframe.contentDocument.execCommand('removeFormat',false,null);
 				}
-				alertify.prompt('Enter the link: ',callback,'http://');
-			}
+				/* b : bold */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 66) {
+					iframe.contentDocument.execCommand('bold',false,null);
+				}
+				/* i : italics */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 73) {
+					iframe.contentDocument.execCommand('italic',false,null);
+				}
+				/* h : highlight */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 72) {
+					iframe.contentDocument.execCommand('backColor',false,"yellow");
+				}
+				/* l : list */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 76) {
+					iframe.contentDocument.execCommand('insertUnorderedList',false,null);
+				}
+				/* + : superscript */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 187) {
+					iframe.contentDocument.execCommand('superscript',false,null);
+				}
+				/* - : subscript */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 189) {
+					iframe.contentDocument.execCommand('subscript',false,null);
+				}
+				/* j : justify left */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 74) {
+					iframe.contentDocument.execCommand('justifyLeft',false,null);
+				}
+				/* f : justify full */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 70) {
+					iframe.contentDocument.execCommand('justifyFull',false,null);
+				}
+				/* tab : indent */
+				if(event.keyCode === 9) {
+					iframe.contentDocument.execCommand('insertHTML',false,'&nbsp;&nbsp;&nbsp;&nbsp;');
+				}
+				/* a - anchor */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 65) {
+					function callback(event,str) {
+						if(event) {
+							if (str.indexOf("http://") < 0 && str.indexOf("https://") < 0) {
+								iframe.contentDocument.execCommand('createLink',false,"http://" + str);
+							} else if (str.indexOf("http://") === 0 || str.indexOf("https://") === 0) {
+								iframe.contentDocument.execCommand('createLink',false,str);
+							} else {
+								alertify.log("Not A Valid Link!","error");
+							}
+						} else { /* cancel */ }
+					}
+					alertify.prompt('Enter the link: ',callback,'http://');
+				}
 
-			/* Command + letter, works for these, but include for consistency */
-			/* x : cut */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 88) {
-				iframe.contentDocument.execCommand('cut',false,null);
-			}
-			/* c : copy */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 67) {
-				iframe.contentDocument.execCommand('copy',false,null);
-			}
-			/* v : paste */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 86) {
-				iframe.contentDocument.execCommand('paste',false,null);
-			}
-			/* z : undo */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 90) {
-				iframe.contentDocument.execCommand('undo',false,null);
-			}
-			/* y : redo */
-			if(event.shiftKey && event.ctrlKey && event.keyCode === 89) {
-				iframe.contentDocument.execCommand('redo',false,null);
-			}
+				/* Command + letter, works for these, but include for consistency */
+				/* x : cut */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 88) {
+					iframe.contentDocument.execCommand('cut',false,null);
+				}
+				/* c : copy */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 67) {
+					iframe.contentDocument.execCommand('copy',false,null);
+				}
+				/* v : paste */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 86) {
+					iframe.contentDocument.execCommand('paste',false,null);
+				}
+				/* z : undo */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 90) {
+					iframe.contentDocument.execCommand('undo',false,null);
+				}
+				/* y : redo */
+				if(event.shiftKey && event.ctrlKey && event.keyCode === 89) {
+					iframe.contentDocument.execCommand('redo',false,null);
+				}
 
-			/// is this necessary ??
-			event.stopPropagation();
+				/// is this necessary ??
+				event.stopPropagation();
+			}
 		}
 	};
 };

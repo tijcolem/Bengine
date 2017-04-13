@@ -3,6 +3,9 @@ extensibles.xmath = new function xmath() {
 	this.name = "math";
 	this.upload = false;
 
+	var xmathObj = this;
+	var blocklimit = 2047;
+
 	var parseBlock = function(blockText) {
 		var element = document.createElement('div');
 		element.innerHTML = blockText.replace(/\\/g,"\\\\").replace(/</g,"@@LT").replace(/>/g,"@@RT").replace(/<br>/g,"@@BR");
@@ -19,7 +22,9 @@ extensibles.xmath = new function xmath() {
 
 		var mathBlock = document.createElement('div');
 		mathBlock.setAttribute('class','xMat');
-		mathBlock.setAttribute('onblur','x["' + this.type + '"].f.renderMath(this)');
+		mathBlock.onblur = function() {
+			xmathObj.f.renderMath(this);
+		};
 		mathBlock.contentEditable = true;
 		/* defaul text */
 		if(globalScope.defaulttext && content === "") {
@@ -27,6 +32,36 @@ extensibles.xmath = new function xmath() {
 		} else {
 			mathBlock.innerHTML = deparseBlock(content);
 		}
+
+		/* set limit function on keydown event */
+		function setLimit(block,event) {
+			if(event.keyCode !== 8 && block.innerText.length > blocklimit) {
+				event.preventDefault();
+			}
+		}
+
+		if (mathBlock.addEventListener) {
+			mathBlock.addEventListener("keydown",setLimit.bind(null,block),false);
+		} else if (mathBlock.attachEvent) {
+			mathBlock.attachEvent("onkeydown",setLimit.bind(null,block));
+		} else {
+			mathBlock.onkeydown = setLimit.bind(null,block);
+		}
+
+		/* set limit on paste */
+		mathBlock.onpaste = function(event) {
+			var ptext;
+			if (window.clipboardData && window.clipboardData.getData) {
+				ptext = window.clipboardData.getData('Text');
+			} else if (event.clipboardData && event.clipboardData.getData) {
+				ptext = event.clipboardData.getData('text/plain');
+			}
+
+			if((this.innerText.length + ptext.length) > blocklimit) {
+				return false;
+			}
+			return true;
+		};
 
 		block.appendChild(mathpreview);
 		block.appendChild(mathBlock);

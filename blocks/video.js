@@ -3,6 +3,8 @@ extensibles.video = new function video() {
 	this.name = "video";
 	this.upload = true;
 
+	var videoObj = this;
+
 	this.insertContent = function(block,content) {
 		var video = document.createElement("video");
 		video.setAttribute("class","xVid");
@@ -53,7 +55,7 @@ extensibles.video = new function video() {
 		var stylestr = `.xVid, .xVid-show {
 			display: inline-block;
 			width: 100%;
-			height: 506px;
+			height: 100%;
 			border: 1px solid black;
 			border-radius: 2px;
 

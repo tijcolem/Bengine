@@ -1,11 +1,13 @@
 extensibles.slide = new function slide() {
 	(function() {
-		globalBlockEngine.pdfObjects = {};
+		blockGlobals.pdfObjects = {};
 	})();
 
 	this.type = "slide";
 	this.name = "slide";
 	this.upload = true;
+
+	var slideObj = this;
 
 	this.insertContent = function(block,content) {
 		/* data-page attribute keeps track of which page is being displayed */
@@ -19,11 +21,11 @@ extensibles.slide = new function slide() {
 		/* if block was just made, don't try to load pdf */
 		if (content !== "") {
 			PDFJS.getDocument(content).then(function(pdfObj) {
-				globalBlockEngine.pdfObjects[content] = pdfObj;
+				blockGlobals.pdfObjects[content] = pdfObj;
 
 				var tag = block.childNodes[0];
 
-				x.slide.f.renderPDF(pdfObj,1,tag);
+				blockExtensibles.slide.f.renderPDF(pdfObj,1,tag);
 			});
 		}
 
@@ -36,20 +38,20 @@ extensibles.slide = new function slide() {
 			var canvas = this.childNodes[0];
 			var pageNum = canvas.getAttribute("data-page");
 			var pdfID = canvas.getAttribute("id");
-			var pageCount = globalBlockEngine.pdfObjects[pdfID].numPages;
+			var pageCount = blockGlobals.pdfObjects[pdfID].numPages;
 
 			/* determine whether left or right side was clicked, then render prev or next page */
 			if(X > this.offsetWidth / 1.7) {
 				if(pageNum < pageCount) {
 					pageNum++;
 					canvas.setAttribute("data-page",pageNum);
-					x.slide.f.renderPDF(globalBlockEngine.pdfObjects[pdfID],pageNum,canvas);
+					blockExtensibles.slide.f.renderPDF(blockGlobals.pdfObjects[pdfID],pageNum,canvas);
 				}
 			} else {
 				if(pageNum > 1) {
 					pageNum--;
 					canvas.setAttribute("data-page",pageNum);
-					x.slide.f.renderPDF(globalBlockEngine.pdfObjects[pdfID],pageNum,canvas);
+					blockExtensibles.slide.f.renderPDF(blockGlobals.pdfObjects[pdfID],pageNum,canvas);
 				}
 			}
 		};
@@ -63,7 +65,7 @@ extensibles.slide = new function slide() {
 			/* add the pdf to the pdfObjects array and render the first page */
 			PDFJS.getDocument(data).then(function(pdfObj) {
 
-				globalBlockEngine.pdfObjects[data] = pdfObj;
+				blockGlobals.pdfObjects[data] = pdfObj;
 
 				var slidetag = document.getElementById('bengine-a' + bid).childNodes[0];
 				slidetag.setAttribute("id",data);
@@ -90,11 +92,11 @@ extensibles.slide = new function slide() {
 		/* if block was just made, don't try to load pdf */
 		if (content !== "") {
 			PDFJS.getDocument(content).then(function(pdfObj) {
-				globalBlockEngine.pdfObjects[content] = pdfObj;
+				blockGlobals.pdfObjects[content] = pdfObj;
 
 				var tag = block.childNodes[0];
 
-				x.slide.f.renderPDF(pdfObj,1,tag);
+				blockExtensibles.slide.f.renderPDF(pdfObj,1,tag);
 			});
 		}
 
@@ -107,20 +109,20 @@ extensibles.slide = new function slide() {
 			var canvas = this.childNodes[0];
 			var pageNum = canvas.getAttribute("data-page");
 			var pdfID = canvas.getAttribute("id");
-			var pageCount = globalBlockEngine.pdfObjects[pdfID].numPages;
+			var pageCount = blockGlobals.pdfObjects[pdfID].numPages;
 
 			/* determine whether left or right side was clicked, then render prev or next page */
 			if(X > this.offsetWidth / 1.7) {
 				if(pageNum < pageCount) {
 					pageNum++;
 					canvas.setAttribute("data-page",pageNum);
-					x.slide.f.renderPDF(globalBlockEngine.pdfObjects[pdfID],pageNum,canvas);
+					blockExtensibles.slide.f.renderPDF(blockGlobals.pdfObjects[pdfID],pageNum,canvas);
 				}
 			} else {
 				if(pageNum > 1) {
 					pageNum--;
 					canvas.setAttribute("data-page",pageNum);
-					x.slide.f.renderPDF(globalBlockEngine.pdfObjects[pdfID],pageNum,canvas);
+					blockExtensibles.slide.f.renderPDF(blockGlobals.pdfObjects[pdfID],pageNum,canvas);
 				}
 			}
 		};
@@ -132,7 +134,7 @@ extensibles.slide = new function slide() {
 		var stylestr = `.xSli, .xSli-show {
 			display: inline-block;
 			width: 100%;
-			height: 506px;
+			height: 100%;
 			border: 1px solid black;
 			border-radius: 2px;
 

@@ -23,6 +23,105 @@ function Bengine(extensibles,globals,funcs,options) {
 this.extensibles = extensibles;
 this.globals = globals;
 
+options.blockLimit = options.blockLimit || 8;
+options.enableSave = options.enableSave || true;
+options.enableSingleView = options.enableSingleView || false;
+options.mediaLimit = options.mediaLimit || 100; // mb
+options.playableMediaLimit = options.playableMediaLimit || 180; // seconds
+options.swidth = options.swidth || "900px";
+
+/***
+	Section: Start Up Code
+	Any necessary start up code for Bengine goes here.
+***/
+
+var style = document.createElement('style');
+style.type = 'text/css';
+style.innerHTML = `.bengine-block-style {
+}
+.bengine-instance {
+	overflow: hidden;
+}
+.bengine-block-style-embed {
+	height: 85vh !important;
+	margin: 0 !important;
+}
+.bengine-x-blocks {
+
+}
+.bengine-single-view {
+	width: 100%;
+	height: 15vh;
+	position: absolute;
+	bottom: 0;
+	right: 0;
+}
+.bengine-btn-embed {
+	border: 0;
+	color: black;
+	float: left;
+	width: 100%;
+	height: 100%;
+	padding: 0px 30px;
+	text-align: center;
+	cursor: pointer;
+	transition: background-color .5s;
+	touch-action: manipulation;
+	font-size: 1em;
+	font-weight: 400;
+}
+.bengine-btn-color {
+	background-color: #00ffe1;
+}
+.bengine-btn-color:hover {
+	background-color: #00a895;
+}
+.bengine-block {
+	margin: 0;
+	padding: 0;
+}
+.bengine-blockbtns {
+	max-width: $site-width;
+	margin: 10px auto 0px auto;
+	position: relative;
+}
+
+.bengine-blockbtn {
+	color: black;
+	border: 1px solid transparent;
+	border-color: black;
+	border-radius: 2px;
+
+	width: 100%;
+
+	padding: 6px 12px;
+	text-align: center;
+
+	cursor: pointer;
+	transition: background-color .5s;
+	touch-action: manipulation;
+
+	font-size: 1em;
+	font-weight: 400;
+}
+.addbtn {
+	background-color: #00ffe1;
+}
+.addbtn:hover {
+	background-color: #00a895;
+}
+.delbtn {
+	background-color: #ff1111;
+}
+.delbtn:hover {
+	background-color: #d31e1e;
+}
+@media screen and (max-width: ${options.swidth}) {
+    .bengine-blockbtns { width: 100%; }
+	.bengine-blockbtn { width: 100%; }
+`;
+document.getElementsByTagName('head')[0].appendChild(style);
+
 /***
 	Section: Replaceable Functions
 	These functions are essentially helper functions that can be replaced by custom functions passed into Bengine.
@@ -219,10 +318,20 @@ this.blockContentShow = function(main,id,data) {
 		var block = generateBlock(i,data[count]);
 		var retblock = extensibles[data[count]].showContent(block,data[count + 1]);
 
+		if(options.enableSingleView) {
+			retblock.children[0].className += " bengine-block-style-embed";
+		} else {
+			retblock.children[0].className += " bengine-block-style";
+		}
+
 		/* create the block div */
 		var group = document.createElement('div');
-		group.setAttribute('class','block');
+		group.setAttribute('class','bengine-block');
 		group.setAttribute('id','bengine-' + i);
+
+		if(options.enableSingleView && i !== 1) {
+			group.setAttribute('style','display:none;visibility:hidden;');
+		}
 
 		/* append group to blocks div */
 		group.appendChild(retblock);
@@ -230,6 +339,61 @@ this.blockContentShow = function(main,id,data) {
 
 		count += 2;
 		i++;
+	}
+
+	function changeBlock(dir) {
+		/* back:false, forward:true */
+		var direction = -1;
+		if(dir) {
+			direction = 1;
+		}
+
+		var viewDiv = document.getElementById('bengine-currentBlock');
+		var viewStatus = Number(viewDiv.getAttribute('data-currentBlock'));
+
+		var next = viewStatus + direction;
+
+		var nextBlock = document.getElementById('bengine-' + next);
+		if(nextBlock !== null) {
+			var currentBlock = document.getElementById('bengine-' + viewStatus);
+			currentBlock.setAttribute('style','display:none;visibility:hidden;');
+
+			nextBlock.setAttribute('style','display:block;visibility:visible;');
+
+			viewDiv.setAttribute('data-currentBlock',next);
+		}
+	}
+
+	if(options.enableSingleView) {
+		var singleViewBtnsDiv = document.createElement('div');
+		singleViewBtnsDiv.setAttribute('id','bengine-single-view');
+		singleViewBtnsDiv.setAttribute('class','bengine-single-view');
+
+		var btnBack = document.createElement('button');
+		btnBack.setAttribute('class','bengine-btn-embed bengine-btn-color');
+		btnBack.setAttribute('style','width: 50%;');
+		btnBack.innerHTML = '&larr;';
+		btnBack.onclick = function() {
+			changeBlock(false);
+		};
+
+		var btnForward = document.createElement('button');
+		btnForward.setAttribute('class','bengine-btn-embed bengine-btn-color');
+		btnForward.setAttribute('style','width: 50%;');
+		btnForward.innerHTML = '&rarr;';
+		btnForward.onclick = function() {
+			changeBlock(true);
+		};
+
+		var currentSingle = document.createElement('div');
+		currentSingle.setAttribute('id','bengine-currentBlock');
+		currentSingle.setAttribute('data-currentBlock',1);
+		currentSingle.setAttribute('style','display:none;visibility:hidden;');
+
+		singleViewBtnsDiv.appendChild(btnBack);
+		singleViewBtnsDiv.appendChild(btnForward);
+		singleViewBtnsDiv.appendChild(currentSingle);
+		enginediv.appendChild(singleViewBtnsDiv);
 	}
 
 	return i;
@@ -310,7 +474,7 @@ var blockEngineStart = function(main,id,data) {
 
 		/* create block + button div */
 		var group = document.createElement('div');
-		group.setAttribute('class','block');
+		group.setAttribute('class','bengine-block');
 		group.setAttribute('id','bengine-' + i);
 
 		group.appendChild(retblock);
@@ -441,7 +605,9 @@ var countBlocks = function() {
 */
 var generateBlock = function(bid,btype) {
 	var block = document.createElement('div');
-	block.setAttribute('class','bengine-block-wrapper');
+	if(!options.enableSingleView) {
+		block.setAttribute('style','margin-bottom:12px;');
+	}
 	block.setAttribute('data-btype',btype);
 	block.setAttribute('id','bengine-a' + bid);
 
@@ -490,7 +656,7 @@ var blockButtons = function(bid) {
 
 	/* this div will hold the buttons inside of it */
 	var buttonDiv = document.createElement('div');
-	buttonDiv.setAttribute('class','blockbtns row');
+	buttonDiv.setAttribute('class','bengine-blockbtns row');
 	buttonDiv.setAttribute('id','bengine-b' + bid);
 
 	/// there should prob be better styling than this
@@ -507,7 +673,7 @@ var blockButtons = function(bid) {
 			btn.onclick = function() {
 				addBlock(bid,extensibles[prop].type);
 			};
-			btn.setAttribute("class","blockbtn addbtn");
+			btn.setAttribute("class","bengine-blockbtn addbtn");
 			btn.innerHTML = extensibles[prop].name;
 
 			colDiv.appendChild(btn);
@@ -521,7 +687,7 @@ var blockButtons = function(bid) {
 
 	var delBtn = document.createElement('button');
 	delBtn.setAttribute('id','bengine-d' + bid);
-	delBtn.setAttribute("class","blockbtn delbtn");
+	delBtn.setAttribute("class","bengine-blockbtn delbtn");
 	delBtn.onclick = function() {
 		deleteBlock(bid);
 	};
@@ -592,7 +758,7 @@ var insertBlock = function(block,buttons,bid,count) {
 
 	/* create the block div */
 	var group = document.createElement('div');
-	group.setAttribute('class','block');
+	group.setAttribute('class','bengine-block');
 	group.setAttribute('id','bengine-' + bid);
 
 	/* append the content block & buttons div to the block div */
@@ -666,6 +832,10 @@ var createBlock = function(cbid,blockObj) {
 		none
 */
 var addBlock = function(bid,blockTypeName) {
+	if(options.blockLimit < (document.getElementsByClassName("bengine-block").length + 1)) {
+		alertify.alert("You Have Reached The Block Limit");
+		return;
+	}
 
 	var blockObj = extensibles[blockTypeName];
 
@@ -803,6 +973,9 @@ this.revertBlocks = function() {
 	var xid = document.getElementById('bengine-x-id').getAttribute('data-xid');
 	var xidName = document.getElementById('bengine-x-id').getAttribute('name');
 
+	/* get the did for restarting the bengine instance */
+	var did = document.getElementById('bengine-x-id').getAttribute('data-did');
+
 	var xmlhttp;
 	xmlhttp = new XMLHttpRequest();
 
@@ -822,7 +995,11 @@ this.revertBlocks = function() {
 						var oldBengine = document.getElementById('bengine-instance');
 						var main = oldBengine.parentNode;
 						main.removeChild(oldBengine);
-						blockEngineStart(main.getAttribute('id'),[xidName,xid],result.data.split(","));
+						if(result.data === "") {
+							blockEngineStart(main.getAttribute('id'),[xidName,xid,did],[]);
+						} else {
+							blockEngineStart(main.getAttribute('id'),[xidName,xid,did],result.data.split(","));
+						}
 						document.getElementById("bengine-savestatus").innerHTML = "Saved";
 						break;
 					case 'noxid':
@@ -855,7 +1032,7 @@ this.revertBlocks = function() {
 
 		nothing - *
 */
-if(options.hasOwnProperty('enableSave') && options.enableSave === false) {
+if(options.enableSave === false) {
 	saveBlocks = function(which) { /* do nothing */ };
 } else {
 var saveBlocks = function(which) {
@@ -1010,141 +1187,187 @@ var uploadMedia = function(bid,blockObj) {
 		/* grab the selected file */
 		var file = fileSelect.files[0];
 
+		/* validation */
 		var notvalid = false;
 		var nofile = false;
 		var errorMsg;
 		if(fileSelect.files.length > 0) {
-			if(file.size > 4294967295) {
+			if(file.size > (options.mediaLimit * 1048576)) {
 				notvalid = true;
-				errorMsg = "Files Must Be Less Than 4.3 GB";
+				errorMsg = `Files Must Be Less Than ${options.mediaLimit} MB`;
 			}
 		} else {
 			nofile = true;
 		}
 
+		var checklengthvideo = false;
+		var checklengthaudio = false;
+		switch(blockObj.type) {
+			case "audio":
+				var audTempElement = document.createElement('audio');
+				var audFileURL = URL.createObjectURL(file);
+				audTempElement.src = audFileURL;
+				checklengthaudio = true;
+				break;
+			case "video":
+				var vidTempElement = document.createElement('video');
+				var vidFileURL = URL.createObjectURL(file);
+				vidTempElement.src = vidFileURL;
+				checklengthvideo = true;
+				break;
+			default:
+		}
+
 		if(nofile) {
 			/* do nothing, no file selected */
-		} else if(notvalid) {
+			this.value = null;
+			return;
+		}
+
+		if(notvalid) {
 			alertify.alert(errorMsg);
 		} else {
-			/* create the block to host the media */
-			createBlock(bid - 1,blockObj);
+			/* this gets called below where length check occurs */
+			function uploadProcess() {
+				/* create the block to host the media */
+				createBlock(bid - 1,blockObj);
 
-			/* wrap the ajax request in a promise */
-			var promise = new Promise(function(resolve,reject) {
+				/* wrap the ajax request in a promise */
+				var promise = new Promise(function(resolve,reject) {
 
-				/* create javascript FormData object and append the file */
-				var formData = new FormData();
-				formData.append('media',file,file.name);
+					/* create javascript FormData object and append the file */
+					var formData = new FormData();
+					formData.append('media',file,file.name);
 
-				/* get the directory id */
-				var did = document.getElementById('bengine-x-id').getAttribute('data-did');
+					/* get the directory id */
+					var did = document.getElementById('bengine-x-id').getAttribute('data-did');
 
-				/* grab the domain and create the url destination for the ajax request */
-				var url = createURL("/uploadmedia?did=" + did + "&btype=" + blockObj.type);
+					/* grab the domain and create the url destination for the ajax request */
+					var url = createURL("/uploadmedia?did=" + did + "&btype=" + blockObj.type);
 
-				var xmlhttp = new XMLHttpRequest();
-				xmlhttp.open('POST',url,true);
+					var xmlhttp = new XMLHttpRequest();
+					xmlhttp.open('POST',url,true);
 
-				/* upload progress */
-				xmlhttp.upload.onloadstart = function(e) {
-					progressInitialize("Uploading...",e.total);
-				};
-				xmlhttp.upload.onprogress = function(e) {
-					if (e.lengthComputable) {
-						progressUpdate(e.loaded);
-					}
-				};
-				xmlhttp.upload.onloadend = function(e) {
-					progressFinalize("Uploaded",e.total);
-				};
-
-				function counter(reset) {
-					if(typeof counter.track === 'undefined' || counter.track === 0) {
-						counter.track = 1;
-						return 1;
-					} else if(reset) {
-						counter.track = 0;
-						return 0;
-					} else {
-						counter.track++;
-					}
-					return counter.track;
-				}
-
-				function position(spot) {
-					if(typeof position.prev === 'undefined') {
-						position.prev = 0;
-						position.curr = spot;
-					} else if (position.curr !== spot) {
-						position.prev = position.curr;
-						position.curr = spot;
-					}
-					return [position.prev,position.curr];
-				}
-
-				/* conversion progress */
-				xmlhttp.onprogress = function(e) {
-					var spotArray = position(xmlhttp.responseText.length);
-					var current = counter(false);
-					var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
-					if(current === 1) {
-						progressInitialize("Converting...",val[val.length - 1]);
-					} else {
-						progressUpdate(val[val.length - 1]);
-					}
-				};
-
-				xmlhttp.onloadend = function(e) {
-					var spotArray = position(xmlhttp.responseText.length);
-					var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
-					progressFinalize("Not Saved",val[val.length - 1]);
-					counter(true);
-				};
-
-				xmlhttp.onreadystatechange = function() {
-					if (xmlhttp.readyState === XMLHttpRequest.DONE) {
-						if(xmlhttp.status === 200) {
-							if(xmlhttp.responseText === "err") {
-								reject("err");
-							} else if(xmlhttp.responseText === "convertmediaerr") {
-								reject("convertmediaerr");
-							} else if (xmlhttp.responseText === "nouploadloggedout") {
-								deleteBlock(bid - 1);
-								alertify.alert("You Can't Upload Media Because You Are Logged Out. Log Back In On A Separate Page, Then Return Here & Try Again.");
-								reject("err");
-							} else {
-								var spotArray = position(xmlhttp.responseText.length);
-								var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
-								/* reset position */
-								position(0); position(0);
-								resolve(val[val.length - 1]);
-							}
-						} else {
-							alertify.alert('Error:' + xmlhttp.status + ": Please Try Again");
-							reject("err");
+					/* upload progress */
+					xmlhttp.upload.onloadstart = function(e) {
+						progressInitialize("Uploading...",e.total);
+					};
+					xmlhttp.upload.onprogress = function(e) {
+						if (e.lengthComputable) {
+							progressUpdate(e.loaded);
 						}
+					};
+					xmlhttp.upload.onloadend = function(e) {
+						progressFinalize("Uploaded",e.total);
+					};
+
+					function counter(reset) {
+						if(typeof counter.track === 'undefined' || counter.track === 0) {
+							counter.track = 1;
+							return 1;
+						} else if(reset) {
+							counter.track = 0;
+							return 0;
+						} else {
+							counter.track++;
+						}
+						return counter.track;
+					}
+
+					function position(spot) {
+						if(typeof position.prev === 'undefined') {
+							position.prev = 0;
+							position.curr = spot;
+						} else if (position.curr !== spot) {
+							position.prev = position.curr;
+							position.curr = spot;
+						}
+						return [position.prev,position.curr];
+					}
+
+					/* conversion progress */
+					xmlhttp.onprogress = function(e) {
+						var spotArray = position(xmlhttp.responseText.length);
+						var current = counter(false);
+						var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
+						if(current === 1) {
+							progressInitialize("Converting...",val[val.length - 1]);
+						} else {
+							progressUpdate(val[val.length - 1]);
+						}
+					};
+
+					xmlhttp.onloadend = function(e) {
+						var spotArray = position(xmlhttp.responseText.length);
+						var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
+						progressFinalize("Not Saved",val[val.length - 1]);
+						counter(true);
+					};
+
+					xmlhttp.onreadystatechange = function() {
+						if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+							if(xmlhttp.status === 200) {
+								if(xmlhttp.responseText === "err") {
+									reject("err");
+								} else if(xmlhttp.responseText === "convertmediaerr") {
+									reject("convertmediaerr");
+								} else if (xmlhttp.responseText === "nouploadloggedout") {
+									deleteBlock(bid - 1);
+									alertify.alert("You Can't Upload Media Because You Are Logged Out. Log Back In On A Separate Page, Then Return Here & Try Again.");
+									reject("err");
+								} else {
+									var spotArray = position(xmlhttp.responseText.length);
+									var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
+									/* reset position */
+									position(0); position(0);
+									resolve(val[val.length - 1]);
+								}
+							} else {
+								alertify.alert('Error:' + xmlhttp.status + ": Please Try Again");
+								reject("err");
+							}
+						}
+					};
+
+					xmlhttp.send(formData);
+				});
+
+				promise.then(function(data) {
+
+					blockObj.afterDOMinsert(bid,data);
+
+					/* save blocks to temp table, indicated by false */
+					saveBlocks(false);
+				},function(error) {
+					if(error === "convertmediaerr") {
+						alertify.log("There was an error with that media format. Please try a different file type.");
+					} else {
+						alertify.log("There was an unknown error during media upload.");
+					}
+				});
+			}
+
+			if(checklengthvideo) {
+				vidTempElement.ondurationchange = function() {
+					if(this.duration > options.playableMediaLimit) {
+						alertify.alert(`Videos Must Be Less Than ${options.playableMediaLimit} Seconds`);
+					} else {
+						uploadProcess();
 					}
 				};
-
-				xmlhttp.send(formData);
-			});
-
-			promise.then(function(data) {
-
-				blockObj.afterDOMinsert(bid,data);
-
-				/* save blocks to temp table, indicated by false */
-				saveBlocks(false);
-			},function(error) {
-				if(error === "convertmediaerr") {
-					alertify.log("There was an error with that media format. Please try a different file type.");
-				} else {
-					alertify.log("There was an unknown error during media upload.");
-				}
-			});
+			} else if(checklengthaudio) {
+				audTempElement.ondurationchange = function() {
+					if(this.duration > options.playableMediaLimit) {
+						alertify.alert(`Videos Must Be Less Than ${options.playableMediaLimit} Seconds`);
+					} else {
+						uploadProcess();
+					}
+				};
+			} else {
+				uploadProcess();
+			}
 		}
-		/* this resets the selection to nothing, in case the user decides to upload the same file, onchange will still fire */
+		/* resets selection to nothing, in case user decides to upload the same file, onchange will still fire */
 		this.value = null;
 	};
 };

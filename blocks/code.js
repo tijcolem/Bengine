@@ -3,6 +3,9 @@ extensibles.xcode = new function xcode() {
 	this.name = "code";
 	this.upload = false;
 
+	var xcodeObj = this;
+	var blocklimit = 15; // these are lines <br>, not chars
+
 	var parseBlock = function(blockText) {
 		var element = document.createElement('div');
 		element.innerHTML = blockText.replace(/<span[^>]*>/g,"").replace(/<\/span>/g,"").replace(/</g,"@@LT").replace(/>/g,"@@RT").replace(/<br>/g,"@@BR");
@@ -16,7 +19,9 @@ extensibles.xcode = new function xcode() {
 	this.insertContent = function(block,content) {
 		var codeBlock = document.createElement("code");
 		codeBlock.setAttribute("class","xCde");
-		codeBlock.setAttribute('onblur','x["' + this.type + '"].f.renderCode(this)');
+		codeBlock.onblur = function() {
+			xcodeObj.f.renderCode(this);
+		};
 		codeBlock.contentEditable = true;
 
 		/* defaul text */
@@ -36,6 +41,25 @@ extensibles.xcode = new function xcode() {
 		} else {
 			codeBlock.onkeydown = this.f.codeKeys.bind(null,block);
 		}
+
+		/* set limit on paste */
+		codeBlock.onpaste = function(event) {
+			var ptext;
+			if (window.clipboardData && window.clipboardData.getData) {
+				ptext = window.clipboardData.getData('Text');
+			} else if (event.clipboardData && event.clipboardData.getData) {
+				ptext = event.clipboardData.getData('text/plain');
+			}
+
+			var breakCount = (this.innerHTML.match(/<br>/g) || []).length;
+			var lineCount = (ptext.match(/\n/g) || []).length;
+
+			if((breakCount + lineCount) >= blocklimit) {
+				return false;
+			} else {
+				return true;
+			}
+		};
 
 		return block;
 	};
@@ -67,12 +91,14 @@ extensibles.xcode = new function xcode() {
 
 			display: inline-block;
 			width: 100%;
-			height: 200px;
+			height: 385px;
 			border: 1px solid black;
 			border-radius: 2px;
 			background-color: white;
 
 			line-height: 1.8em;
+			word-wrap: break-word;
+			overflow:hidden;
 
 			background-image: -webkit-linear-gradient(#ccc, #ccc 3px, white 4px, white 18px, #ccc 19px, #ccc 32px);
 		    background-image: -moz-linear-gradient(#ccc, #ccc 3px, white 4px, white 18px, #ccc 19px, #ccc 32px);
@@ -105,26 +131,33 @@ extensibles.xcode = new function xcode() {
 				none
 		*/
 		codeKeys: function codeKeys(block,event) {
-			/* tab */
-			if (event.keyCode === 9) {
-
-				/* prevent default tab behavior */
+			var breakCount = (block.innerHTML.match(/(<br>|\n)/g) || []).length;
+			if(event.keyCode === 13 && (breakCount + 1) >= blocklimit) {
 				event.preventDefault();
+			} else if(event.keyCode !== 8 && breakCount >= blocklimit) {
+				event.preventDefault();
+			} else {
+				/* tab */
+				if (event.keyCode === 9) {
 
-				/* grab the cursor location */
-				var doc = block.ownerDocument.defaultView;
-				var sel = doc.getSelection();
-				var range = sel.getRangeAt(0);
+					/* prevent default tab behavior */
+					event.preventDefault();
 
-				/* insert 4 spaces representing a tab */
-				var tabNode = document.createTextNode("\u00a0\u00a0\u00a0\u00a0");
-				range.insertNode(tabNode);
+					/* grab the cursor location */
+					var doc = block.ownerDocument.defaultView;
+					var sel = doc.getSelection();
+					var range = sel.getRangeAt(0);
 
-				/* replace cursor to after tab location */
-				range.setStartAfter(tabNode);
-				range.setEndAfter(tabNode);
-				sel.removeAllRanges();
-				sel.addRange(range);
+					/* insert 4 spaces representing a tab */
+					var tabNode = document.createTextNode("\u00a0\u00a0\u00a0\u00a0");
+					range.insertNode(tabNode);
+
+					/* replace cursor to after tab location */
+					range.setStartAfter(tabNode);
+					range.setEndAfter(tabNode);
+					sel.removeAllRanges();
+					sel.addRange(range);
+				}
 			}
 		},
 		/*
@@ -143,11 +176,6 @@ extensibles.xcode = new function xcode() {
 		renderCode: function renderCode(block) {
 			/* add code formatting */
 			hljs.highlightBlock(block);
-
-			/// notify the user if they have surpassed our limit
-			if(block.textContent.length > 1024) {
-				alertify.alert("There is too much in this code block. The block will not save correctly. Please remove some of its content.");
-			}
 		}
 	};
 };

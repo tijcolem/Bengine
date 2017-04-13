@@ -3,6 +3,8 @@ extensibles.audio = new function audio() {
 	this.name = "audio";
 	this.upload = true;
 
+	var audioObj = this;
+
 	this.insertContent = function(block,content) {
 		var audio = document.createElement("audio");
 		audio.setAttribute("class","xAud");

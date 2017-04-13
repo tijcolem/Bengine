@@ -3,6 +3,9 @@ extensibles.title = new function title() {
 	this.name = "title";
 	this.upload = false;
 
+	var titleObj = this;
+	var blocklimit = 64;
+
 	var parseBlock = function(blockText) {
 		var element = document.createElement('div');
 		element.innerHTML = blockText.replace(/</g,"@@LT").replace(/>/g,"@@RT").replace(/<br>/g,"@@BR");
@@ -14,7 +17,7 @@ extensibles.title = new function title() {
 	};
 
 	this.insertContent = function(block,content) {
-		var str = '<input type="text" class="xTit" maxlength="64" value="' + deparseBlock(content) + '">';
+		var str = '<input type="text" class="xTit" maxlength="' + blocklimit + '" value="' + deparseBlock(content) + '">';
 		block.innerHTML = str;
 
 		return block;

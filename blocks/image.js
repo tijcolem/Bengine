@@ -3,6 +3,8 @@ extensibles.image = new function image() {
 	this.name = "image";
 	this.upload = true;
 
+	var imageObj = this;
+
 	this.insertContent = function(block,content) {
 		var ximg = document.createElement("img");
 		ximg.setAttribute("class","xImg");
@@ -40,7 +42,7 @@ extensibles.image = new function image() {
 		var stylestr = `.xImg, .xImg-show {
 			display: inline-block;
 			width: 100%;
-			height: 506px;
+			height: 100%;
 			border: 1px solid black;
 			border-radius: 2px;
 

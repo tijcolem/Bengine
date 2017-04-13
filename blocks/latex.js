@@ -1,7 +1,10 @@
-x.latex = new function latex() {
+extensibles.latex = new function latex() {
 	this.type = "latex";
 	this.name = "latex";
 	this.upload = false;
+
+	var latexObj = this;
+	var blocklimit = 2097;
 
 	var parseBlock = function(blockText) {
 		var element = document.createElement('div');
@@ -19,7 +22,9 @@ x.latex = new function latex() {
 
 		var latexBlock = document.createElement('div');
 		latexBlock.setAttribute('class','xLtx');
-		latexBlock.setAttribute('onblur','x["' + this.type + '"].f.renderLatex(this)');
+		latexBlock.onblur = function() {
+			latexObj.f.renderLatex(this);
+		};
 		latexBlock.contentEditable = true;
 		/* defaul text */
 		if(globalScope.defaulttext && content === "") {
@@ -27,6 +32,36 @@ x.latex = new function latex() {
 		} else {
 			latexBlock.innerHTML = deparseBlock(content);
 		}
+
+		/* set limit function on keydown event */
+		function setLimit(block,event) {
+			if(event.keyCode !== 8 && block.innerText.length > blocklimit) {
+				event.preventDefault();
+			}
+		}
+
+		if (latexBlock.addEventListener) {
+			latexBlock.addEventListener("keydown",setLimit.bind(null,block),false);
+		} else if (latexBlock.attachEvent) {
+			latexBlock.attachEvent("onkeydown",setLimit.bind(null,block));
+		} else {
+			latexBlock.onkeydown = setLimit.bind(null,block);
+		}
+
+		/* set limit on paste */
+		latexBlock.onpaste = function(event) {
+			var ptext;
+			if (window.clipboardData && window.clipboardData.getData) {
+				ptext = window.clipboardData.getData('Text');
+			} else if (event.clipboardData && event.clipboardData.getData) {
+				ptext = event.clipboardData.getData('text/plain');
+			}
+
+			if((this.innerText.length + ptext.length) > blocklimit) {
+				return false;
+			}
+			return true;
+		};
 
 		block.appendChild(latexpreview);
 		block.appendChild(latexBlock);
@@ -87,7 +122,7 @@ x.latex = new function latex() {
 			margin: 0px;
 			box-sizing: border-box;
 		}`;
-		return "";
+		return stylestr;
 	};
 
 	this.f = {
