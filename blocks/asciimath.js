@@ -100,12 +100,12 @@ extensibles.xmath = new function xmath() {
 		var stylestr = `.xMat {
 			display: inline-block;
 			width: 100%;
-			height: 100px;
+			height: auto;
 			border: 1px solid black;
 			border-radius: 2px;
 			background-color: white;
 
-			padding: 4px 6px;
+			padding: 8px 6px;
 			margin: 2px 0 0 0;
 			box-sizing: border-box;
 
@@ -115,12 +115,12 @@ extensibles.xmath = new function xmath() {
 		.mathImage, .mathImage-show {
 			display: inline-block;
 			width: 100%;
-			height: 200px;
+			height: auto;
 			border: 1px solid black;
 			border-radius: 2px;
 			background-color: white;
 
-			padding: 4px 6px;
+			padding: 8px 6px;
 			margin: 0px;
 			box-sizing: border-box;
 		}`;

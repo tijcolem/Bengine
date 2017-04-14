@@ -109,7 +109,7 @@ extensibles.xtext = new function xtext() {
 			overflow-y: auto;
 
 			width: 100%;
-			height: 200px;
+			height: auto;
 			border: 1px solid black;
 			border-radius: 2px;
 			background-color: white;

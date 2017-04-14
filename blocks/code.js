@@ -91,7 +91,8 @@ extensibles.xcode = new function xcode() {
 
 			display: inline-block;
 			width: 100%;
-			height: 385px;
+			min-height: 62px;
+			height: auto;
 			border: 1px solid black;
 			border-radius: 2px;
 			background-color: white;
