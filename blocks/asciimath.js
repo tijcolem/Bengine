@@ -70,12 +70,12 @@ extensibles.xmath = new function xmath() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		this.f.renderMath(document.getElementById('bengine-a' + bid).childNodes[1]);
+		this.f.renderMath(document.getElementById(bid).childNodes[1]);
 	};
 
 	this.saveContent = function(bid) {
 		/* replace() is for escaping backslashes */
-		var blockContent = document.getElementById('bengine-a' + bid).children[1].innerHTML;
+		var blockContent = document.getElementById(bid).children[1].innerHTML;
 		return parseBlock(blockContent);
 	};
 

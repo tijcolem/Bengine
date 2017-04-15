@@ -25,14 +25,14 @@ extensibles.image = new function image() {
 
 	this.afterDOMinsert = function(bid,data) {
 		if(data !== null) {
-			var imagetag = document.getElementById('bengine-a' + bid).childNodes[0];
+			var imagetag = document.getElementById(bid).childNodes[0];
 			imagetag.src = data;
 		}
 	};
 
 	this.saveContent = function(bid) {
 		/* replace() is for escaping backslashes and making relative path */
-		var imagestr = document.getElementById('bengine-a' + bid).children[0].src;
+		var imagestr = document.getElementById(bid).children[0].src;
 		return parseBlock(imagestr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
 	};
 

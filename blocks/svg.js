@@ -18,13 +18,13 @@ extensibles.xsvgs = new function xsvgs() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		/// var svgtag = document.getElementById('bengine-a' + bid).childNodes[0];
+		/// var svgtag = document.getElementById(bid).childNodes[0];
 		/// replace below with svgtag.innrHTML = success;
 		/// svgtag.setAttribute("data-link",success);
 	};
 
 	this.saveContent = function(bid) {
-		var svgstr = document.getElementById('bengine-a' + bid).childNodes[0].getAttribute("data-link");
+		var svgstr = document.getElementById(bid).childNodes[0].getAttribute("data-link");
 		return svgstr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),"");
 	};
 

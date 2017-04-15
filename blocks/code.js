@@ -65,12 +65,12 @@ extensibles.xcode = new function xcode() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		var codeBlock = document.getElementById('bengine-a' + bid).childNodes[0];
+		var codeBlock = document.getElementById(bid).childNodes[0];
 		this.f.renderCode(codeBlock);
 	};
 
 	this.saveContent = function(bid) {
-		var blockContent = document.getElementById('bengine-a' + bid).children[0].innerHTML;
+		var blockContent = document.getElementById(bid).children[0].innerHTML;
 		return parseBlock(blockContent);
 	};
 

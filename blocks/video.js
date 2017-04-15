@@ -32,14 +32,14 @@ extensibles.video = new function video() {
 	this.afterDOMinsert = function(bid,data) {
 		if(data !== null) {
 			/* audio & video divs have their src set in an extra child node */
-			var mediatag = document.getElementById('bengine-a' + bid).childNodes[0].childNodes[0];
+			var mediatag = document.getElementById(bid).childNodes[0].childNodes[0];
 			mediatag.src = data;
 			mediatag.parentNode.load();
 		}
 	};
 
 	this.saveContent = function(bid) {
-		var mediastr = document.getElementById('bengine-a' + bid).children[0].children[0].src;
+		var mediastr = document.getElementById(bid).children[0].children[0].src;
 		return parseBlock(mediastr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
 	};
 

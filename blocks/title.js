@@ -28,7 +28,7 @@ extensibles.title = new function title() {
 	};
 
 	this.saveContent = function(bid) {
-		var blockContent = document.getElementById('bengine-a' + bid).children[0].value;
+		var blockContent = document.getElementById(bid).children[0].value;
 		return parseBlock(blockContent);
 	};
 

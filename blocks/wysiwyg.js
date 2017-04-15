@@ -80,7 +80,7 @@ extensibles.xtext = new function xtext() {
 
 	this.afterDOMinsert = function(bid,data) {
 		/* grab the block iframe that was just made */
-		var blocki = document.getElementById("bengine-a" + bid).childNodes[0];
+		var blocki = document.getElementById(bid).childNodes[0];
 		var blockDoc = blocki.contentDocument;
 
 		/* make iframe editable */
@@ -89,7 +89,7 @@ extensibles.xtext = new function xtext() {
 
 	this.saveContent = function(bid) {
 		/* execCommand() applies style tags to <body> tag inside <iframe>, hence .getElementsByTagName('body')[0] */
-		var blockContent = document.getElementById('bengine-a' + bid).children[0].contentDocument.getElementsByTagName('body')[0].innerHTML;
+		var blockContent = document.getElementById(bid).children[0].contentDocument.getElementsByTagName('body')[0].innerHTML;
 		return parseBlock(blockContent);
 	};
 

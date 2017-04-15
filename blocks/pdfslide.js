@@ -71,7 +71,7 @@ extensibles.slide = new function slide() {
 
 				slideObj.g.pdfObjects[data] = pdfObj;
 
-				var slidetag = document.getElementById('bengine-a' + bid).childNodes[0];
+				var slidetag = document.getElementById(bid).childNodes[0];
 				slidetag.setAttribute("id",data);
 
 				objCopy.f.renderPDF(pdfObj,1,slidetag);
@@ -80,7 +80,7 @@ extensibles.slide = new function slide() {
 	};
 
 	this.saveContent = function(bid) {
-		var slidestr = document.getElementById('bengine-a' + bid).children[0].id;
+		var slidestr = document.getElementById(bid).children[0].id;
 		return parseBlock(slidestr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
 	};
 
