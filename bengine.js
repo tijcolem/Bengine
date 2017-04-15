@@ -1311,6 +1311,8 @@ var uploadMedia = function(bid,blockObj) {
 									reject("err");
 								} else if(xmlhttp.responseText === "convertmediaerr") {
 									reject("convertmediaerr");
+								} else if(xmlhttp.responseText === "nopatherr") {
+									reject("nopatherr");
 								} else if (xmlhttp.responseText === "nouploadloggedout") {
 									deleteBlock(bid - 1);
 									alertify.alert("You Can't Upload Media Because You Are Logged Out. Log Back In On A Separate Page, Then Return Here & Try Again.");
@@ -1333,7 +1335,6 @@ var uploadMedia = function(bid,blockObj) {
 				});
 
 				promise.then(function(data) {
-
 					blockObj.afterDOMinsert(bid,data);
 
 					/* save blocks to temp table, indicated by false */
@@ -1341,6 +1342,8 @@ var uploadMedia = function(bid,blockObj) {
 				},function(error) {
 					if(error === "convertmediaerr") {
 						alertify.log("There was an error with that media format. Please try a different file type.");
+					} else if (error === "nopatherr") {
+						alertify.log("Bad path error.");
 					} else {
 						alertify.log("There was an unknown error during media upload.");
 					}

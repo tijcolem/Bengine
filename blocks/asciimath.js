@@ -119,6 +119,8 @@ extensibles.xmath = new function xmath() {
 			border: 1px solid black;
 			border-radius: 2px;
 			background-color: white;
+			
+			text-align:center;
 
 			padding: 8px 6px;
 			margin: 0px;

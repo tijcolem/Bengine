@@ -62,7 +62,7 @@ extensibles.title = new function title() {
 		.xTit-show {
 			display: inline-block;
 			width: 100%;
-			height: 46px;
+			height: auto;
 			background-color: rgba(118, 118, 118, 0.2);
 			border: 1px solid black;
 			border-bottom-color: rgba(118, 118, 118, 0.2);

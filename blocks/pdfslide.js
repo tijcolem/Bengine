@@ -185,6 +185,6 @@ extensibles.slide = new function slide() {
 	};
 	
 	this.g = {
-		pdfObjects: {};
+		pdfObjects: {}
 	};
 };
