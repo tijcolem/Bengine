@@ -5,6 +5,14 @@ extensibles.video = new function video() {
 
 	var videoObj = this;
 
+	var parseBlock = function(blockText) {
+		return encodeURIComponent(blockText);
+	};
+
+	var deparseBlock = function(blockText) {
+		return decodeURIComponent(blockText);
+	};
+
 	this.insertContent = function(block,content) {
 		var video = document.createElement("video");
 		video.setAttribute("class","xVid");
@@ -12,7 +20,7 @@ extensibles.video = new function video() {
 		video.setAttribute("controls","controls");
 
 		var videosource = document.createElement("source");
-		videosource.setAttribute("src",content);
+		videosource.setAttribute("src",deparseBlock(content));
 		videosource.setAttribute("type","video/mp4");
 
 		video.appendChild(videosource);
@@ -32,7 +40,7 @@ extensibles.video = new function video() {
 
 	this.saveContent = function(bid) {
 		var mediastr = document.getElementById('bengine-a' + bid).children[0].children[0].src;
-		return mediastr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),"");
+		return parseBlock(mediastr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
 	};
 
 	this.showContent = function(block,content) {
@@ -42,7 +50,7 @@ extensibles.video = new function video() {
 		video.setAttribute("controls","controls");
 
 		var videosource = document.createElement("source");
-		videosource.setAttribute("src",content);
+		videosource.setAttribute("src",deparseBlock(content));
 		videosource.setAttribute("type","video/mp4");
 
 		video.appendChild(videosource);

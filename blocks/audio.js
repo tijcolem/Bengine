@@ -4,6 +4,14 @@ extensibles.audio = new function audio() {
 	this.upload = true;
 
 	var audioObj = this;
+	
+	var parseBlock = function(blockText) {
+		return encodeURIComponent(blockText);
+	};
+
+	var deparseBlock = function(blockText) {
+		return decodeURIComponent(blockText);
+	};
 
 	this.insertContent = function(block,content) {
 		var audio = document.createElement("audio");
@@ -12,7 +20,7 @@ extensibles.audio = new function audio() {
 		audio.setAttribute("controls","controls");
 
 		var audiosource = document.createElement("source");
-		audiosource.setAttribute("src",content);
+		audiosource.setAttribute("src",deparseBlock(content));
 		audiosource.setAttribute("type","audio/mpeg");
 
 		audio.appendChild(audiosource);
@@ -32,7 +40,7 @@ extensibles.audio = new function audio() {
 
 	this.saveContent = function(bid) {
 		var mediastr = document.getElementById('bengine-a' + bid).children[0].children[0].src;
-		return mediastr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),"");
+		return parseBlock(mediastr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
 	};
 
 	this.showContent = function(block,content) {
@@ -42,7 +50,7 @@ extensibles.audio = new function audio() {
 		audio.setAttribute("controls","controls");
 
 		var audiosource = document.createElement("source");
-		audiosource.setAttribute("src",content);
+		audiosource.setAttribute("src",deparseBlock(content));
 		audiosource.setAttribute("type","audio/mpeg");
 
 		audio.appendChild(audiosource);

@@ -4,11 +4,19 @@ extensibles.image = new function image() {
 	this.upload = true;
 
 	var imageObj = this;
+	
+	var parseBlock = function(blockText) {
+		return encodeURIComponent(blockText);
+	};
+
+	var deparseBlock = function(blockText) {
+		return decodeURIComponent(blockText);
+	};
 
 	this.insertContent = function(block,content) {
 		var ximg = document.createElement("img");
 		ximg.setAttribute("class","xImg");
-		ximg.src = content;
+		ximg.src = deparseBlock(content);
 
 		block.appendChild(ximg);
 
@@ -25,13 +33,13 @@ extensibles.image = new function image() {
 	this.saveContent = function(bid) {
 		/* replace() is for escaping backslashes and making relative path */
 		var imagestr = document.getElementById('bengine-a' + bid).children[0].src;
-		return imagestr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),"");
+		return parseBlock(imagestr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
 	};
 
 	this.showContent = function(block,content) {
 		var ximg = document.createElement("img");
 		ximg.setAttribute("class","xImg-show");
-		ximg.src = content;
+		ximg.src = deparseBlock(content);
 
 		block.appendChild(ximg);
 

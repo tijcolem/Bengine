@@ -1,13 +1,17 @@
 extensibles.slide = new function slide() {
-	(function() {
-		blockGlobals.pdfObjects = {};
-	})();
-
 	this.type = "slide";
 	this.name = "slide";
 	this.upload = true;
 
 	var slideObj = this;
+	
+	var parseBlock = function(blockText) {
+		return encodeURIComponent(blockText);
+	};
+
+	var deparseBlock = function(blockText) {
+		return decodeURIComponent(blockText);
+	};
 
 	this.insertContent = function(block,content) {
 		/* data-page attribute keeps track of which page is being displayed */
@@ -20,12 +24,12 @@ extensibles.slide = new function slide() {
 
 		/* if block was just made, don't try to load pdf */
 		if (content !== "") {
-			PDFJS.getDocument(content).then(function(pdfObj) {
-				blockGlobals.pdfObjects[content] = pdfObj;
+			PDFJS.getDocument(deparseBlock(content)).then(function(pdfObj) {
+				slideObj.g.pdfObjects[content] = pdfObj;
 
 				var tag = block.childNodes[0];
 
-				blockExtensibles.slide.f.renderPDF(pdfObj,1,tag);
+				slideObj.f.renderPDF(pdfObj,1,tag);
 			});
 		}
 
@@ -38,20 +42,20 @@ extensibles.slide = new function slide() {
 			var canvas = this.childNodes[0];
 			var pageNum = canvas.getAttribute("data-page");
 			var pdfID = canvas.getAttribute("id");
-			var pageCount = blockGlobals.pdfObjects[pdfID].numPages;
+			var pageCount = slideObj.g.pdfObjects[pdfID].numPages;
 
 			/* determine whether left or right side was clicked, then render prev or next page */
 			if(X > this.offsetWidth / 1.7) {
 				if(pageNum < pageCount) {
 					pageNum++;
 					canvas.setAttribute("data-page",pageNum);
-					blockExtensibles.slide.f.renderPDF(blockGlobals.pdfObjects[pdfID],pageNum,canvas);
+					slideObj.f.renderPDF(slideObj.g.pdfObjects[pdfID],pageNum,canvas);
 				}
 			} else {
 				if(pageNum > 1) {
 					pageNum--;
 					canvas.setAttribute("data-page",pageNum);
-					blockExtensibles.slide.f.renderPDF(blockGlobals.pdfObjects[pdfID],pageNum,canvas);
+					slideObj.f.renderPDF(slideObj.g.pdfObjects[pdfID],pageNum,canvas);
 				}
 			}
 		};
@@ -63,9 +67,9 @@ extensibles.slide = new function slide() {
 		var objCopy = this;
 		if(data !== null) {
 			/* add the pdf to the pdfObjects array and render the first page */
-			PDFJS.getDocument(data).then(function(pdfObj) {
+			PDFJS.getDocument(deparseBlock(data)).then(function(pdfObj) {
 
-				blockGlobals.pdfObjects[data] = pdfObj;
+				slideObj.g.pdfObjects[data] = pdfObj;
 
 				var slidetag = document.getElementById('bengine-a' + bid).childNodes[0];
 				slidetag.setAttribute("id",data);
@@ -77,7 +81,7 @@ extensibles.slide = new function slide() {
 
 	this.saveContent = function(bid) {
 		var slidestr = document.getElementById('bengine-a' + bid).children[0].id;
-		return slidestr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),"");
+		return parseBlock(slidestr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
 	};
 
 	this.showContent = function(block,content) {
@@ -91,12 +95,12 @@ extensibles.slide = new function slide() {
 
 		/* if block was just made, don't try to load pdf */
 		if (content !== "") {
-			PDFJS.getDocument(content).then(function(pdfObj) {
-				blockGlobals.pdfObjects[content] = pdfObj;
+			PDFJS.getDocument(deparseBlock(content)).then(function(pdfObj) {
+				slideObj.g.pdfObjects[content] = pdfObj;
 
 				var tag = block.childNodes[0];
 
-				blockExtensibles.slide.f.renderPDF(pdfObj,1,tag);
+				slideObj.f.renderPDF(pdfObj,1,tag);
 			});
 		}
 
@@ -109,20 +113,20 @@ extensibles.slide = new function slide() {
 			var canvas = this.childNodes[0];
 			var pageNum = canvas.getAttribute("data-page");
 			var pdfID = canvas.getAttribute("id");
-			var pageCount = blockGlobals.pdfObjects[pdfID].numPages;
+			var pageCount = slideObj.g.pdfObjects[pdfID].numPages;
 
 			/* determine whether left or right side was clicked, then render prev or next page */
 			if(X > this.offsetWidth / 1.7) {
 				if(pageNum < pageCount) {
 					pageNum++;
 					canvas.setAttribute("data-page",pageNum);
-					blockExtensibles.slide.f.renderPDF(blockGlobals.pdfObjects[pdfID],pageNum,canvas);
+					slideObj.f.renderPDF(slideObj.g.pdfObjects[pdfID],pageNum,canvas);
 				}
 			} else {
 				if(pageNum > 1) {
 					pageNum--;
 					canvas.setAttribute("data-page",pageNum);
-					blockExtensibles.slide.f.renderPDF(blockGlobals.pdfObjects[pdfID],pageNum,canvas);
+					slideObj.f.renderPDF(slideObj.g.pdfObjects[pdfID],pageNum,canvas);
 				}
 			}
 		};
@@ -178,5 +182,9 @@ extensibles.slide = new function slide() {
 				});
 			});
 		}
+	};
+	
+	this.g = {
+		pdfObjects: {};
 	};
 };
