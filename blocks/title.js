@@ -63,14 +63,13 @@ extensibles.title = new function title() {
 			display: inline-block;
 			width: 100%;
 			height: auto;
-			background-color: rgba(118, 118, 118, 0.2);
+			background-color: rgba(118, 118, 118, 0.15);
 			border: 1px solid black;
-			border-bottom-color: rgba(118, 118, 118, 0.2);
+			border-bottom-color: rgba(118, 118, 118, 0.15);
 			border-radius: 2px;
 
 			padding: 6px 6px;
 			margin: 0px;
-			margin-bottom: -12px;
 			box-sizing: border-box;
 
 			text-align: center;

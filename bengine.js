@@ -23,7 +23,8 @@ function Bengine(extensibles,funcs,options) {
 
 this.extensibles = extensibles;
 
-this.main = "";
+var g_bengine = {};
+g_bengine.main = "";
 
 options.blockLimit = options.blockLimit || 8;
 options.enableSave = (options.enableSave !== false);
@@ -73,10 +74,13 @@ style.innerHTML = `.bengine-block-style {
 	font-weight: 400;
 }
 .bengine-btn-color {
-	background-color: #00ffe1;
+	background-color: rgb(0, 0, 0);
+	color: white;
+	font-size: 1.3em;
 }
 .bengine-btn-color:hover {
-	background-color: #00a895;
+	background-color: rgba(0, 0, 0, 0.6);
+	color: black;
 }
 .bengine-block {
 	margin: 0;
@@ -84,7 +88,7 @@ style.innerHTML = `.bengine-block-style {
 }
 .bengine-blockbtns {
 	max-width: $site-width;
-	margin: 10px auto 0px auto;
+	margin: 50px auto 0px auto;
 	position: relative;
 }
 
@@ -107,16 +111,16 @@ style.innerHTML = `.bengine-block-style {
 	font-weight: 400;
 }
 .addbtn {
-	background-color: #00ffe1;
+	background-color: #c8fff9;
 }
 .addbtn:hover {
-	background-color: #00a895;
+	background-color: #82dad0;
 }
 .delbtn {
-	background-color: #ff1111;
+	background-color: #ff1818;
 }
 .delbtn:hover {
-	background-color: #d31e1e;
+	background-color: #a81313;
 }
 @media screen and (max-width: ${options.swidth}) {
     .bengine-blockbtns { width: 100%; }
@@ -201,14 +205,14 @@ if(funcs.hasOwnProperty('progressFinalize') && typeof funcs.progressFinalize ===
 	progressFinalize = funcs.progressFinalize;
 } else {
 	progressFinalize = function(msg,max) {
-		document.getElementById("bengine-progressbar" + this.main).setAttribute("value",max);
-		document.getElementById("bengine-progressbar" + this.main).style.visibility = "hidden";
-		document.getElementById("bengine-progressbar" + this.main).style.display = "none";
+		document.getElementById("bengine-progressbar" + g_bengine.main).setAttribute("value",max);
+		document.getElementById("bengine-progressbar" + g_bengine.main).style.visibility = "hidden";
+		document.getElementById("bengine-progressbar" + g_bengine.main).style.display = "none";
 
-		document.getElementById("bengine-autosave" + this.main).style.visibility = "visible";
-		document.getElementById("bengine-autosave" + this.main).style.display = "block";
+		document.getElementById("bengine-autosave" + g_bengine.main).style.visibility = "visible";
+		document.getElementById("bengine-autosave" + g_bengine.main).style.display = "block";
 
-		document.getElementById("bengine-savestatus" + this.main).innerHTML = msg;
+		document.getElementById("bengine-savestatus" + g_bengine.main).innerHTML = msg;
 	};
 }
 
@@ -229,15 +233,15 @@ if(funcs.hasOwnProperty('progressInitialize') && typeof funcs.progressInitialize
 	progressInitialize = funcs.progressInitialize;
 } else {
 	progressInitialize = function(msg,max) {
-		document.getElementById("bengine-autosave" + this.main).style.visibility = "hidden";
-		document.getElementById("bengine-autosave" + this.main).style.display = "none";
+		document.getElementById("bengine-autosave" + g_bengine.main).style.visibility = "hidden";
+		document.getElementById("bengine-autosave" + g_bengine.main).style.display = "none";
 
-		document.getElementById("bengine-progressbar" + this.main).setAttribute("value",0);
-		document.getElementById("bengine-progressbar" + this.main).setAttribute("max",max);
-		document.getElementById("bengine-progressbar" + this.main).style.visibility = "visible";
-		document.getElementById("bengine-progressbar" + this.main).style.display = "block";
+		document.getElementById("bengine-progressbar" + g_bengine.main).setAttribute("value",0);
+		document.getElementById("bengine-progressbar" + g_bengine.main).setAttribute("max",max);
+		document.getElementById("bengine-progressbar" + g_bengine.main).style.visibility = "visible";
+		document.getElementById("bengine-progressbar" + g_bengine.main).style.display = "block";
 
-		document.getElementById("bengine-savestatus" + this.main).innerHTML = msg;
+		document.getElementById("bengine-savestatus" + g_bengine.main).innerHTML = msg;
 	};
 }
 
@@ -257,7 +261,7 @@ if(funcs.hasOwnProperty('progressUpdate') && typeof funcs.progressUpdate === 'fu
 	progressUpdate = funcs.progressUpdate;
 } else {
 	progressUpdate = function(value) {
-		document.getElementById("bengine-progressbar" + this.main).setAttribute("value",value);
+		document.getElementById("bengine-progressbar" + g_bengine.main).setAttribute("value",value);
 	};
 }
 
@@ -287,7 +291,7 @@ if(funcs.hasOwnProperty('progressUpdate') && typeof funcs.progressUpdate === 'fu
 */
 this.blockContentShow = function(main,id,data) {
 	/* set object global, used to separate one engine from another */
-	this.main = "-" + main + "-";
+	g_bengine.main = "-" + main + "-";
 
 	/* main div */
 	var mainDiv = document.getElementById(main);
@@ -300,13 +304,13 @@ this.blockContentShow = function(main,id,data) {
 	var enginediv;
 	enginediv = document.createElement('div');
 	enginediv.setAttribute('class','bengine-instance');
-	enginediv.setAttribute('id','bengine-instance' + this.main);
+	enginediv.setAttribute('id','bengine-instance' + g_bengine.main);
 	mainDiv.appendChild(enginediv);
 
 	/* blocks */
 	var blocksdiv = document.createElement('div');
 	blocksdiv.setAttribute('class','bengine-x-blocks');
-	blocksdiv.setAttribute('id','bengine-x-blocks' + this.main);
+	blocksdiv.setAttribute('id','bengine-x-blocks' + g_bengine.main);
 
 	/* append blocks div to engine div */
 	enginediv.appendChild(blocksdiv);
@@ -331,8 +335,8 @@ this.blockContentShow = function(main,id,data) {
 
 		/* create the block div */
 		var group = document.createElement('div');
-		group.setAttribute('class','bengine-block bengine-block' + this.main);
-		group.setAttribute('id','bengine' + this.main + i);
+		group.setAttribute('class','bengine-block bengine-block' + g_bengine.main);
+		group.setAttribute('id','bengine' + g_bengine.main + i);
 
 		if(options.enableSingleView && i !== 1) {
 			group.setAttribute('style','display:none;visibility:hidden;');
@@ -353,14 +357,14 @@ this.blockContentShow = function(main,id,data) {
 			direction = 1;
 		}
 
-		var viewDiv = document.getElementById('bengine-currentBlock' + this.main);
+		var viewDiv = document.getElementById('bengine-currentBlock' + g_bengine.main);
 		var viewStatus = Number(viewDiv.getAttribute('data-currentBlock'));
 
 		var next = viewStatus + direction;
 
-		var nextBlock = document.getElementById('bengine' + this.main + next);
+		var nextBlock = document.getElementById('bengine' + g_bengine.main + next);
 		if(nextBlock !== null) {
-			var currentBlock = document.getElementById('bengine' + this.main + viewStatus);
+			var currentBlock = document.getElementById('bengine' + g_bengine.main + viewStatus);
 			currentBlock.setAttribute('style','display:none;visibility:hidden;');
 
 			nextBlock.setAttribute('style','display:block;visibility:visible;');
@@ -371,7 +375,7 @@ this.blockContentShow = function(main,id,data) {
 
 	if(options.enableSingleView) {
 		var singleViewBtnsDiv = document.createElement('div');
-		singleViewBtnsDiv.setAttribute('id','bengine-single-view' + this.main);
+		singleViewBtnsDiv.setAttribute('id','bengine-single-view' + g_bengine.main);
 		singleViewBtnsDiv.setAttribute('class','bengine-single-view');
 
 		var btnBack = document.createElement('button');
@@ -391,7 +395,7 @@ this.blockContentShow = function(main,id,data) {
 		};
 
 		var currentSingle = document.createElement('div');
-		currentSingle.setAttribute('id','bengine-currentBlock' + this.main);
+		currentSingle.setAttribute('id','bengine-currentBlock' + g_bengine.main);
 		currentSingle.setAttribute('data-currentBlock',1);
 		currentSingle.setAttribute('style','display:none;visibility:hidden;');
 
@@ -421,7 +425,7 @@ this.blockContentShow = function(main,id,data) {
 */
 var blockEngineStart = function(main,id,data) {
 	/* set object global, used to separate one engine from another */
-	this.main = "-" + main + "-";
+	g_bengine.main = "-" + main + "-";
 
 	/* main div */
 	var mainDiv = document.getElementById(main);
@@ -434,13 +438,13 @@ var blockEngineStart = function(main,id,data) {
 	var enginediv;
 	enginediv = document.createElement('div');
 	enginediv.setAttribute('class','bengine-instance');
-	enginediv.setAttribute('id','bengine-instance' + this.main);
+	enginediv.setAttribute('id','bengine-instance' + g_bengine.main);
 	mainDiv.appendChild(enginediv);
 
 	/* blocks */
 	var blocksdiv = document.createElement('div');
 	blocksdiv.setAttribute('class','bengine-x-blocks');
-	blocksdiv.setAttribute('id','bengine-x-blocks' + this.main);
+	blocksdiv.setAttribute('id','bengine-x-blocks' + g_bengine.main);
 
 	/* append blocks div to engine div */
 	enginediv.appendChild(blocksdiv);
@@ -482,8 +486,8 @@ var blockEngineStart = function(main,id,data) {
 
 		/* create block + button div */
 		var group = document.createElement('div');
-		group.setAttribute('class','bengine-block bengine-block' + this.main);
-		group.setAttribute('id','bengine' + this.main + i);
+		group.setAttribute('class','bengine-block bengine-block' + g_bengine.main);
+		group.setAttribute('id','bengine' + g_bengine.main + i);
 
 		group.appendChild(retblock);
 		group.appendChild(buttons);
@@ -492,7 +496,7 @@ var blockEngineStart = function(main,id,data) {
 		blocksdiv.appendChild(group);
 
 		/* do any rendering the block needs */
-		extensibles[data[count]].afterDOMinsert('bengine-a' + this.main + i,null);
+		extensibles[data[count]].afterDOMinsert('bengine-a' + g_bengine.main + i,null);
 
 		count += 2;
 		i++;
@@ -503,7 +507,7 @@ var blockEngineStart = function(main,id,data) {
 	/* hidden form for media uploads */
 	var fileinput = document.createElement('input');
 	fileinput.setAttribute('type','file');
-	fileinput.setAttribute('id','bengine-file-select' + this.main);
+	fileinput.setAttribute('id','bengine-file-select' + g_bengine.main);
 
 	var filebtn = document.createElement('button');
 	filebtn.setAttribute('type','submit');
@@ -527,7 +531,7 @@ var blockEngineStart = function(main,id,data) {
 
 	/* add page id & name to hidden div */
 	var idDiv = document.createElement("input");
-	idDiv.setAttribute("id","bengine-x-id" + this.main);
+	idDiv.setAttribute("id","bengine-x-id" + g_bengine.main);
 	idDiv.setAttribute("name",id[0]);
 	idDiv.setAttribute("data-xid",id[1]);
 	idDiv.setAttribute("data-did",id[2]);
@@ -541,7 +545,7 @@ var blockEngineStart = function(main,id,data) {
 	/* it is checked when exiting a window to notify the user that the page hasn't been saved */
 	var statusid = document.createElement('input');
 	statusid.setAttribute('type','hidden');
-	statusid.setAttribute('id','bengine-statusid' + this.main);
+	statusid.setAttribute('id','bengine-statusid' + g_bengine.main);
 	statusid.setAttribute('value','1');
 	enginediv.appendChild(statusid);
 
@@ -590,7 +594,7 @@ var countBlocks = function() {
 		num++;
 
 		/* undefined is double banged to false, and node is double banged to true */
-		miss = Boolean(document.getElementById('bengine' + this.main + num));
+		miss = Boolean(document.getElementById('bengine' + g_bengine.main + num));
 	}
 
 	/* decrement num, since the check for id happens after increment */
@@ -613,11 +617,11 @@ var countBlocks = function() {
 */
 var generateBlock = function(bid,btype) {
 	var block = document.createElement('div');
-	if(!options.enableSingleView) {
-		block.setAttribute('style','margin-bottom:12px;');
+	if(!options.enableSingleView && btype !== 'title') {
+		block.setAttribute('style','margin-bottom:26px;');
 	}
 	block.setAttribute('data-btype',btype);
-	block.setAttribute('id','bengine-a' + this.main + bid);
+	block.setAttribute('id','bengine-a' + g_bengine.main + bid);
 
 	return block;
 };
@@ -665,7 +669,7 @@ var blockButtons = function(bid) {
 	/* this div will hold the buttons inside of it */
 	var buttonDiv = document.createElement('div');
 	buttonDiv.setAttribute('class','bengine-blockbtns row');
-	buttonDiv.setAttribute('id','bengine-b' + this.main + bid);
+	buttonDiv.setAttribute('id','bengine-b' + g_bengine.main + bid);
 
 	/// there should prob be better styling than this
 	/// if greater than 10, buttons won't fit...
@@ -694,7 +698,7 @@ var blockButtons = function(bid) {
 	delDiv.setAttribute('class','col col-' + percentageWidth);
 
 	var delBtn = document.createElement('button');
-	delBtn.setAttribute('id','bengine-d' + this.main + bid);
+	delBtn.setAttribute('id','bengine-d' + g_bengine.main + bid);
 	delBtn.setAttribute("class","bengine-blockbtn delbtn");
 	delBtn.onclick = function() {
 		deleteBlock(bid);
@@ -730,13 +734,13 @@ var makeSpace = function(bid,count) {
 
 		/* replace the button IDs */
 		var buttons = blockButtons(next);
-		document.getElementById('bengine-b' + this.main + track).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + this.main + track));
+		document.getElementById('bengine-b' + g_bengine.main + track).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + g_bengine.main + track));
 
 		/* replace the content block id */
-		document.getElementById('bengine-a' + this.main + track).setAttribute('id','bengine-a' + this.main + next);
+		document.getElementById('bengine-a' + g_bengine.main + track).setAttribute('id','bengine-a' + g_bengine.main + next);
 
 		/* replace the block id */
-		document.getElementById('bengine' + this.main + track).setAttribute('id','bengine' + this.main + next);
+		document.getElementById('bengine' + g_bengine.main + track).setAttribute('id','bengine' + g_bengine.main + next);
 
 		/* update the count */
 		track--;
@@ -762,12 +766,12 @@ var makeSpace = function(bid,count) {
 var insertBlock = function(block,buttons,bid,count) {
 
 	/* grab the blocks container */
-	var blocksdiv = document.getElementById('bengine-x-blocks' + this.main);
+	var blocksdiv = document.getElementById('bengine-x-blocks' + g_bengine.main);
 
 	/* create the block div */
 	var group = document.createElement('div');
-	group.setAttribute('class','bengine-block bengine-block' + this.main);
-	group.setAttribute('id','bengine' + this.main + bid);
+	group.setAttribute('class','bengine-block bengine-block' + g_bengine.main);
+	group.setAttribute('id','bengine' + g_bengine.main + bid);
 
 	/* append the content block & buttons div to the block div */
 	group.appendChild(block);
@@ -815,12 +819,12 @@ var createBlock = function(cbid,blockObj) {
 	var retblock = blockObj.insertContent(block,content);
 	var blockbuttons = blockButtons(bid);
 	insertBlock(retblock,blockbuttons,bid,blockCount);
-	blockObj.afterDOMinsert('bengine-a' + this.main + bid,null);
+	blockObj.afterDOMinsert('bengine-a' + g_bengine.main + bid,null);
 
 	/* make delete buttons visible */
 	var i = 0;
 	while(i <= blockCount) {
-		document.getElementById('bengine-d' + this.main + i).style.visibility = 'visible';
+		document.getElementById('bengine-d' + g_bengine.main + i).style.visibility = 'visible';
 		i++;
 	}
 };
@@ -840,7 +844,7 @@ var createBlock = function(cbid,blockObj) {
 		none
 */
 var addBlock = function(bid,blockTypeName) {
-	if(options.blockLimit < (document.getElementsByClassName("bengine-block" + this.main).length + 1)) {
+	if(options.blockLimit < (document.getElementsByClassName("bengine-block" + g_bengine.main).length + 1)) {
 		alertify.alert("You Have Reached The Block Limit");
 		return;
 	}
@@ -881,13 +885,13 @@ var closeSpace = function(cbid,count) {
 
 		/* replace the button IDs */
 		var buttons = blockButtons(bid);
-		document.getElementById('bengine-b' + this.main + next).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + this.main + next));
+		document.getElementById('bengine-b' + g_bengine.main + next).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + g_bengine.main + next));
 
 		/* replace the content block id */
-		document.getElementById('bengine-a' + this.main + next).setAttribute('id','bengine-a' + this.main + bid);
+		document.getElementById('bengine-a' + g_bengine.main + next).setAttribute('id','bengine-a' + g_bengine.main + bid);
 
 		/* replace the block id */
-		document.getElementById('bengine' + this.main + next).setAttribute('id','bengine' + this.main + bid);
+		document.getElementById('bengine' + g_bengine.main + next).setAttribute('id','bengine' + g_bengine.main + bid);
 
 		/* update the bid */
 		bid++;
@@ -908,7 +912,7 @@ var closeSpace = function(cbid,count) {
 		nothing - *
 */
 var removeBlock = function(bid) {
-	var element = document.getElementById('bengine' + this.main + bid);
+	var element = document.getElementById('bengine' + g_bengine.main + bid);
 	element.parentNode.removeChild(element);
 };
 
@@ -942,10 +946,10 @@ var deleteBlock = function(cbid) {
 	var i = 0;
 	blockCount = countBlocks();
 	while(i < blockCount) {
-		document.getElementById('bengine-d' + this.main + i).style.visibility = 'visible';
+		document.getElementById('bengine-d' + g_bengine.main + i).style.visibility = 'visible';
 		i++;
 	}
-	document.getElementById('bengine-d' + this.main + i).style.visibility = 'hidden';
+	document.getElementById('bengine-d' + g_bengine.main + i).style.visibility = 'hidden';
 
 	/* save blocks to temp table, indicated by false */
 	saveBlocks(false);
@@ -978,11 +982,11 @@ this.revertBlocks = function() {
 	var url = createURL("/revertblocks");
 
 	/* get the pid & page name */
-	var xid = document.getElementById('bengine-x-id' + this.main).getAttribute('data-xid');
-	var xidName = document.getElementById('bengine-x-id' + this.main).getAttribute('name');
+	var xid = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('data-xid');
+	var xidName = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('name');
 
 	/* get the did for restarting the bengine instance */
-	var did = document.getElementById('bengine-x-id' + this.main).getAttribute('data-did');
+	var did = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('data-did');
 
 	var xmlhttp;
 	xmlhttp = new XMLHttpRequest();
@@ -1000,7 +1004,7 @@ this.revertBlocks = function() {
 
 				switch(result.msg) {
 					case 'success':
-						var oldBengine = document.getElementById('bengine-instance' + this.main);
+						var oldBengine = document.getElementById('bengine-instance' + g_bengine.main);
 						var main = oldBengine.parentNode;
 						main.removeChild(oldBengine);
 						if(result.data === "") {
@@ -1008,7 +1012,7 @@ this.revertBlocks = function() {
 						} else {
 							blockEngineStart(main.getAttribute('id'),[xidName,xid,did],result.data.split(","));
 						}
-						document.getElementById("bengine-savestatus" + this.main).innerHTML = "Saved";
+						document.getElementById("bengine-savestatus" + g_bengine.main).innerHTML = "Saved";
 						break;
 					case 'noxid':
 						alertify.alert("This Page Is Not Meant To Be Visited Directly."); break;
@@ -1049,12 +1053,12 @@ var saveBlocks = function(which) {
 	var table;
 	if(which === false) {
 		table = 0;
-		document.getElementById("bengine-savestatus" + this.main).innerHTML = "Not Saved";
+		document.getElementById("bengine-savestatus" + g_bengine.main).innerHTML = "Not Saved";
 	} else {
 		table = 1;
 	}
 
-	document.getElementById('bengine-statusid' + this.main).setAttribute('value',table);
+	document.getElementById('bengine-statusid' + g_bengine.main).setAttribute('value',table);
 
 	/* variables for storing block data */
 	var blockType = [];
@@ -1068,11 +1072,11 @@ var saveBlocks = function(which) {
 		var i = 0;
 		while(blockCount >= bid) {
 			/* get the block type */
-			var btype = document.getElementById('bengine-a' + this.main + bid).getAttribute('data-btype');
+			var btype = document.getElementById('bengine-a' + g_bengine.main + bid).getAttribute('data-btype');
 			blockType[i] = btype;
 
 			/* get the block content */
-			blockContent[i] = extensibles[btype].saveContent('bengine-a' + this.main + bid);
+			blockContent[i] = extensibles[btype].saveContent('bengine-a' + g_bengine.main + bid);
 
 			i++;
 			bid++;
@@ -1087,8 +1091,8 @@ var saveBlocks = function(which) {
 	var url = createURL("/saveblocks");
 
 	/* get the pid & page name */
-	var xid = document.getElementById('bengine-x-id' + this.main).getAttribute('data-xid');
-	var xidName = document.getElementById('bengine-x-id' + this.main).getAttribute('name');
+	var xid = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('data-xid');
+	var xidName = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('name');
 
 	var xmlhttp;
 	xmlhttp = new XMLHttpRequest();
@@ -1122,7 +1126,7 @@ var saveBlocks = function(which) {
 				switch(result.msg) {
 					case 'blocksaved':
 						if(table === 1) {
-							document.getElementById("bengine-savestatus" + this.main).innerHTML = "Saved";
+							document.getElementById("bengine-savestatus" + g_bengine.main).innerHTML = "Saved";
 						}
 						break;
 					case 'nosaveloggedout':
@@ -1163,7 +1167,7 @@ this.saveBlocks = function(which) {
 var uploadMedia = function(bid,blockObj) {
 
 	/* get the hidden file-select object that will store the user's file selection */
-	var fileSelect = document.getElementById('bengine-file-select' + this.main);
+	var fileSelect = document.getElementById('bengine-file-select' + g_bengine.main);
 
 	/* change file-select to only accept files based on btype */
 	switch(blockObj.type) {
@@ -1248,7 +1252,7 @@ var uploadMedia = function(bid,blockObj) {
 					formData.append('media',file,file.name);
 
 					/* get the directory id */
-					var did = document.getElementById('bengine-x-id' + this.main).getAttribute('data-did');
+					var did = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('data-did');
 
 					/* grab the domain and create the url destination for the ajax request */
 					var url = createURL("/uploadmedia?did=" + did + "&btype=" + blockObj.type);
@@ -1343,7 +1347,7 @@ var uploadMedia = function(bid,blockObj) {
 				});
 
 				promise.then(function(data) {
-					blockObj.afterDOMinsert('bengine-a' + this.main + bid,data);
+					blockObj.afterDOMinsert('bengine-a' + g_bengine.main + bid,data);
 
 					/* save blocks to temp table, indicated by false */
 					saveBlocks(false);
