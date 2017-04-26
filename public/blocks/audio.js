@@ -1,4 +1,4 @@
-extensibles.audio = new function audio() {
+BengineConfig.extensibles.audio = new function Audio() {
 	this.type = "audio";
 	this.name = "audio";
 	this.upload = true;
@@ -12,6 +12,10 @@ extensibles.audio = new function audio() {
 	var deparseBlock = function(blockText) {
 		return decodeURIComponent(blockText);
 	};
+
+	this.fetchDependencies = function() {
+		return null;
+	}
 
 	this.insertContent = function(block,content) {
 		var audio = document.createElement("audio");

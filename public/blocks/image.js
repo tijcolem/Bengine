@@ -1,4 +1,4 @@
-extensibles.image = new function image() {
+BengineConfig.extensibles.image = new function Image() {
 	this.type = "image";
 	this.name = "image";
 	this.upload = true;
@@ -12,6 +12,10 @@ extensibles.image = new function image() {
 	var deparseBlock = function(blockText) {
 		return decodeURIComponent(blockText);
 	};
+	
+	this.fetchDependencies = function() {
+		return null;
+	}
 
 	this.insertContent = function(block,content) {
 		var ximg = document.createElement("img");

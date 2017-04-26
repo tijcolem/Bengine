@@ -1,4 +1,4 @@
-extensibles.slide = new function slide() {
+BengineConfig.extensibles.slide = new function Slide() {
 	this.type = "slide";
 	this.name = "slide";
 	this.upload = true;
@@ -12,6 +12,16 @@ extensibles.slide = new function slide() {
 	var deparseBlock = function(blockText) {
 		return decodeURIComponent(blockText);
 	};
+	
+	this.fetchDependencies = function() {
+		var pdfjs = {
+			inner: '',
+			source: 'https://mozilla.github.io/pdf.js/build/pdf.js',
+			type: 'text/javascript'
+		};
+		
+		return [pdfjs];
+	}
 
 	this.insertContent = function(block,content) {
 		/* data-page attribute keeps track of which page is being displayed */

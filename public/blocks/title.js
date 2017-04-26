@@ -1,4 +1,4 @@
-extensibles.title = new function title() {
+BengineConfig.extensibles.title = new function Title() {
 	this.type = "title";
 	this.name = "title";
 	this.upload = false;
@@ -15,6 +15,10 @@ extensibles.title = new function title() {
 	var deparseBlock = function(blockText) {
 		return decodeURIComponent(blockText).replace(/@@LT/g,"<").replace(/@@RT/g,">").replace(/@@BR/g,"<br>").replace(/%27/g,"'");
 	};
+	
+	this.fetchDependencies = function() {
+		return null;
+	}
 
 	this.insertContent = function(block,content) {
 		var str = '<input type="text" class="xTit" maxlength="' + blocklimit + '" value="' + deparseBlock(content) + '">';

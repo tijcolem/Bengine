@@ -1,4 +1,4 @@
-extensibles.video = new function video() {
+BengineConfig.extensibles.video = new function Video() {
 	this.type = "video";
 	this.name = "video";
 	this.upload = true;
@@ -12,6 +12,10 @@ extensibles.video = new function video() {
 	var deparseBlock = function(blockText) {
 		return decodeURIComponent(blockText);
 	};
+	
+	this.fetchDependencies = function() {
+		return null;
+	}
 
 	this.insertContent = function(block,content) {
 		var video = document.createElement("video");

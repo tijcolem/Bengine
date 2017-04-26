@@ -1,4 +1,4 @@
-extensibles.latex = new function latex() {
+BengineConfig.extensibles.latex = new function Latex() {
 	this.type = "latex";
 	this.name = "latex";
 	this.upload = false;
@@ -16,6 +16,21 @@ extensibles.latex = new function latex() {
 		return decodeURIComponent(blockText).replace(/\\\\/g,'\\').replace(/@@LT/g,"<").replace(/@@RT/g,">").replace(/@@BR/g,"<br>").replace(/%27/g,"'");
 	};
 
+	this.fetchDependencies = function() {
+		var mathjax = {
+			inner: '',
+			source: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML',
+			type: 'text/javascript'
+		};
+		var mathjaxConfig = {
+			inner: `MathJax.Hub.Config({tex2jax:{processClass:'latexImage',ignoreClass:'body'},messageStyle:'none'});`,
+			source: '',
+			type: 'text/x-mathjax-config'
+		}
+		
+		return [mathjax,mathjaxConfig];
+	}
+
 	this.insertContent = function(block,content) {
 		var latexpreview = document.createElement('div');
 		latexpreview.setAttribute('class','latexImage');
@@ -27,7 +42,7 @@ extensibles.latex = new function latex() {
 		};
 		latexBlock.contentEditable = true;
 		/* defaul text */
-		if(globalScope.defaulttext && content === "") {
+		if(BengineConfig.options.defaultText && content === "") {
 			latexBlock.innerHTML = 'LaTeX \\ Mark \\ Up: \\quad \\frac{d}{dx}\\left( \\int_{0}^{x} f(u)\\,du\\right)=f(x)';
 		} else {
 			latexBlock.innerHTML = deparseBlock(content);

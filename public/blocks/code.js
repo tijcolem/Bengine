@@ -1,4 +1,4 @@
-extensibles.xcode = new function xcode() {
+BengineConfig.extensibles.xcode = new function Xcode() {
 	this.type = "xcode";
 	this.name = "code";
 	this.upload = false;
@@ -15,6 +15,16 @@ extensibles.xcode = new function xcode() {
 	var deparseBlock = function(blockText) {
 		return decodeURIComponent(blockText).replace(/@@LT/g,"<").replace(/@@RT/g,">").replace(/@@BR/g,"<br>").replace(/%27/g,"'");
 	};
+	
+	this.fetchDependencies = function() {
+		var highlightjs = {
+			inner: '',
+			source: '//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/highlight.min.js',
+			type: 'text/javascript'
+		};
+		
+		return [highlightjs];
+	}
 
 	this.insertContent = function(block,content) {
 		var codeBlock = document.createElement("code");
@@ -25,7 +35,7 @@ extensibles.xcode = new function xcode() {
 		codeBlock.contentEditable = true;
 
 		/* defaul text */
-		if(globalScope.defaulttext && content === "") {
+		if(BengineConfig.options.defaultText && content === "") {
 			codeBlock.innerHTML = "var description = 'Programming languages are auto-detected.';<br>function default(parameter) {<br>&nbsp;&nbsp;&nbsp;&nbsp;var instructions = 'When you click outside the block syntax is highlighted.';<br>&nbsp;&nbsp;&nbsp;&nbsp;alert(parameter + instructions);<br>}<br>default(description);";
 		} else {
 			codeBlock.innerHTML = deparseBlock(content);
@@ -113,6 +123,10 @@ extensibles.xcode = new function xcode() {
 			margin: 0px;
 			box-sizing: border-box;
 		}`;
+		
+		/* highlight js styles */
+		stylestr += `.hljs{display:block;overflow-x:auto;padding:.5em;background:#fff;color:#000}.hljs-comment,.hljs-quote,.hljs-variable{color:green}.hljs-built_in,.hljs-keyword,.hljs-name,.hljs-selector-tag,.hljs-tag{color:#00f}.hljs-addition,.hljs-attribute,.hljs-literal,.hljs-section,.hljs-string,.hljs-template-tag,.hljs-template-variable,.hljs-title,.hljs-type{color:#a31515}.hljs-deletion,.hljs-meta,.hljs-selector-attr,.hljs-selector-pseudo{color:#2b91af}.hljs-doctag{color:grey}.hljs-attr{color:red}.hljs-bullet,.hljs-link,.hljs-symbol{color:#00b0e8}.hljs-emphasis{font-style:italic}.hljs-strong{font-weight:700}`;
+		
 		return stylestr;
 	};
 

@@ -1,4 +1,4 @@
-extensibles.xmath = new function xmath() {
+BengineConfig.extensibles.xmath = new function Xmath() {
 	this.type = "xmath";
 	this.name = "math";
 	this.upload = false;
@@ -15,6 +15,21 @@ extensibles.xmath = new function xmath() {
 	var deparseBlock = function(blockText) {
 		return decodeURIComponent(blockText).replace(/\\\\/g,'\\').replace(/@@LT/g,"<").replace(/@@RT/g,">").replace(/@@BR/g,"<br>").replace(/%27/g,"'");
 	};
+	
+	this.fetchDependencies = function() {
+		var mathjax = {
+			inner: '',
+			source: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML',
+			type: 'text/javascript'
+		};
+		var mathjaxConfig = {
+			inner: `MathJax.Hub.Config({mml2jax:{processClass:'mathImage',ignoreClass:'xample'},asciimath2jax:{processClass:'mathImage',ignoreClass:'body'},messageStyle:'none'});`,
+			source: '',
+			type: 'text/x-mathjax-config'
+		}
+		
+		return [mathjax,mathjaxConfig];
+	};
 
 	this.insertContent = function(block,content) {
 		var mathpreview = document.createElement('div');
@@ -27,7 +42,7 @@ extensibles.xmath = new function xmath() {
 		};
 		mathBlock.contentEditable = true;
 		/* defaul text */
-		if(globalScope.defaulttext && content === "") {
+		if(BengineConfig.options.defaultText && content === "") {
 			mathBlock.innerHTML = 'AsciiMath \\ Mark \\ Up: \\ \\ \\ sum_(i=1)^n i^3=((n(n+1))/2)^2';
 		} else {
 			mathBlock.innerHTML = deparseBlock(content);

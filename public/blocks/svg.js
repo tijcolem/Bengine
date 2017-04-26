@@ -1,7 +1,15 @@
-extensibles.xsvgs = new function xsvgs() {
+BengineConfig.extensibles.xsvgs = new function Xsvgs() {
 	this.type = "xsvgs";
 	this.name = "svg";
 	this.upload = false;
+	
+	this.fetchDependencies = function() {
+		return null;
+	}
+	
+	this.fetchDependencies = function() {
+		return null;
+	}
 
 	this.insertContent = function(block,content) {
 		var xsvgs = document.createElement("div");
