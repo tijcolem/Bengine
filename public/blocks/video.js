@@ -1,6 +1,7 @@
 BengineConfig.extensibles.video = new function Video() {
 	this.type = "video";
 	this.name = "video";
+	this.category = "media";
 	this.upload = true;
 
 	var videoObj = this;
@@ -77,4 +78,8 @@ BengineConfig.extensibles.video = new function Video() {
 		}`;
 		return stylestr;
 	};
+	
+	this.f = {};
+	
+	this.g = {};
 };

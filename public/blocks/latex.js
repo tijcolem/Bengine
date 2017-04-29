@@ -1,6 +1,7 @@
 BengineConfig.extensibles.latex = new function Latex() {
 	this.type = "latex";
 	this.name = "latex";
+	this.category = "math";
 	this.upload = false;
 
 	var latexObj = this;
@@ -19,11 +20,13 @@ BengineConfig.extensibles.latex = new function Latex() {
 	this.fetchDependencies = function() {
 		var mathjax = {
 			inner: '',
+			integrity: '',
 			source: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML',
 			type: 'text/javascript'
 		};
 		var mathjaxConfig = {
 			inner: `MathJax.Hub.Config({tex2jax:{processClass:'latexImage',ignoreClass:'body'},messageStyle:'none'});`,
+			integrity: '',
 			source: '',
 			type: 'text/x-mathjax-config'
 		}
@@ -153,4 +156,6 @@ BengineConfig.extensibles.latex = new function Latex() {
 			MathJax.Hub.Queue(["Typeset",MathJax.Hub,imageBlock]);
 		}
 	};
+	
+	this.g = {};
 };

@@ -1,6 +1,7 @@
 BengineConfig.extensibles.xsvgs = new function Xsvgs() {
 	this.type = "xsvgs";
 	this.name = "svg";
+	this.category = "design";
 	this.upload = false;
 	
 	this.fetchDependencies = function() {
@@ -55,4 +56,8 @@ BengineConfig.extensibles.xsvgs = new function Xsvgs() {
 		}`;
 		return stylestr;
 	};
+	
+	this.f = {};
+	
+	this.g = {};
 };

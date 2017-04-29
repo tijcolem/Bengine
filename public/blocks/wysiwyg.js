@@ -1,6 +1,7 @@
 BengineConfig.extensibles.xtext = new function Xtext() {
 	this.type = "xtext";
 	this.name = "text";
+	this.category = "text";
 	this.upload = false;
 
 	var xtextObj = this;
@@ -238,4 +239,6 @@ BengineConfig.extensibles.xtext = new function Xtext() {
 			}
 		}
 	};
+
+	this.g = {};
 };

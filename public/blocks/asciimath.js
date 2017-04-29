@@ -1,6 +1,7 @@
 BengineConfig.extensibles.xmath = new function Xmath() {
 	this.type = "xmath";
-	this.name = "math";
+	this.name = "asciimath";
+	this.category = "math";
 	this.upload = false;
 
 	var xmathObj = this;
@@ -19,11 +20,13 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 	this.fetchDependencies = function() {
 		var mathjax = {
 			inner: '',
+			integrity: '',
 			source: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML',
 			type: 'text/javascript'
 		};
 		var mathjaxConfig = {
 			inner: `MathJax.Hub.Config({mml2jax:{processClass:'mathImage',ignoreClass:'xample'},asciimath2jax:{processClass:'mathImage',ignoreClass:'body'},messageStyle:'none'});`,
+			integrity: '',
 			source: '',
 			type: 'text/x-mathjax-config'
 		}
@@ -157,4 +160,6 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 			MathJax.Hub.Queue(["Typeset",MathJax.Hub,imageBlock]);
 		}
 	};
+	
+	this.g = {};
 };

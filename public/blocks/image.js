@@ -1,6 +1,7 @@
 BengineConfig.extensibles.image = new function Image() {
 	this.type = "image";
 	this.name = "image";
+	this.category = "media";
 	this.upload = true;
 
 	var imageObj = this;
@@ -64,4 +65,8 @@ BengineConfig.extensibles.image = new function Image() {
 		}`;
 		return stylestr;
 	};
+	
+	this.f = {};
+	
+	this.g = {};
 };

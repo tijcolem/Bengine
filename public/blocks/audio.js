@@ -1,6 +1,7 @@
 BengineConfig.extensibles.audio = new function Audio() {
 	this.type = "audio";
 	this.name = "audio";
+	this.category = "media";
 	this.upload = true;
 
 	var audioObj = this;
@@ -74,4 +75,8 @@ BengineConfig.extensibles.audio = new function Audio() {
 		}`;
 		return stylestr;
 	};
+	
+	this.f = {};
+	
+	this.g = {};
 };

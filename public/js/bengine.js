@@ -37,6 +37,52 @@ options.mediaLimit = options.mediaLimit || 100; // mb
 options.playableMediaLimit = options.playableMediaLimit || 180; // seconds
 options.swidth = options.swidth || "900px";
 
+options.categoryCounts = {};
+options.categoryCounts.code = 0;
+options.categoryCounts.design = 0;
+options.categoryCounts.math = 0;
+options.categoryCounts.media = 0;
+options.categoryCounts.text = 0;
+options.categoryCounts.quiz = 0;
+
+/***
+	Section: Validate Extensibles
+***/
+
+var validExtAttr = ["type","name","category","upload","fetchDependencies","insertContent","afterDOMinsert","saveContent","showContent","styleBlock","f","g"];
+
+for(var prop in extensibles)(function(prop) {
+	var extensibleAttributes = Object.keys(extensibles[prop]);
+	if(extensibleAttributes.length === validExtAttr.length) {
+		for(let i = 0; i < validExtAttr; i++) {
+			if(extensibleAttributes[i] !== validExtAttr[i]) {
+				console.log("Bengine: invalid extensible configuration in " + extensibles[prop]);
+			}
+		}
+	} else {
+		console.log("Bengine: invalid extensible configuration in " + extensibles[prop]);
+	}
+	
+	if(extensibles.hasOwnProperty(prop)) {
+		switch(extensibles[prop].category) {
+			case "code":
+				options.categoryCounts.code++; break;
+			case "design":
+				options.categoryCounts.design++; break;
+			case "math":
+				options.categoryCounts.math++; break;
+			case "media":
+				options.categoryCounts.media++; break;
+			case "text":
+				options.categoryCounts.text++; break;
+			case "quiz":
+				options.categoryCounts.quiz++; break;
+			default:
+				throw new Error("Invalid Category In Extensibles");
+		}
+	}
+})(prop);
+
 /***
 	Section: Start Up Code
 	Any necessary start up code for Bengine goes here.
@@ -116,16 +162,16 @@ if(options.loadStyles) {
 		font-size: 1em;
 		font-weight: 400;
 	}
-	.addbtn {
+	.bengine-addbtn {
 		background-color: #c8fff9;
 	}
-	.addbtn:hover {
+	.bengine-addbtn:hover {
 		background-color: #82dad0;
 	}
-	.delbtn {
+	.bengine-delbtn {
 		background-color: #ff1818;
 	}
-	.delbtn:hover {
+	.bengine-delbtn:hover {
 		background-color: #a81313;
 	}
 	@media screen and (max-width: ${options.swidth}) {
@@ -135,7 +181,7 @@ if(options.loadStyles) {
 	`;
 	
 	/* grid system */
-	style.innerHTML += `.col{box-sizing:border-box;position:relative;float:left;min-height:1px}.col-1{width:1%}.col-2{width:2%}.col-3{width:3%}.col-4{width:4%}.col-5{width:5%}.col-6{width:6%}.col-7{width:7%}.col-8{width:8%}.col-9{width:9%}.col-10{width:10%}.col-11{width:11%}.col-12{width:12%}.col-13{width:13%}.col-14{width:14%}.col-15{width:15%}.col-16{width:16%}.col-17{width:17%}.col-18{width:18%}.col-19{width:19%}.col-20{width:20%}.col-21{width:21%}.col-22{width:22%}.col-23{width:23%}.col-24{width:24%}.col-25{width:25%}.col-26{width:26%}.col-27{width:27%}.col-28{width:28%}.col-29{width:29%}.col-30{width:30%}.col-31{width:31%}.col-32{width:32%}.col-33{width:33.33%}.col-34{width:34%}.col-35{width:35%}.col-36{width:36%}.col-37{width:37%}.col-38{width:38%}.col-39{width:39%}.col-40{width:40%}.col-41{width:41%}.col-42{width:42%}.col-43{width:43%}.col-44{width:44%}.col-45{width:45%}.col-46{width:46%}.col-47{width:47%}.col-48{width:48%}.col-49{width:49%}.col-50{width:50%}.col-51{width:51%}.col-52{width:52%}.col-53{width:53%}.col-54{width:54%}.col-55{width:55%}.col-56{width:56%}.col-57{width:57%}.col-58{width:58%}.col-59{width:59%}.col-60{width:60%}.col-61{width:61%}.col-62{width:62%}.col-63{width:63%}.col-64{width:64%}.col-65{width:65%}.col-66{width:66.66%}.col-67{width:67%}.col-68{width:68%}.col-69{width:69%}.col-70{width:70%}.col-71{width:71%}.col-72{width:72%}.col-73{width:73%}.col-74{width:74%}.col-75{width:75%}.col-76{width:76%}.col-77{width:77%}.col-78{width:78%}.col-79{width:79%}.col-80{width:80%}.col-81{width:81%}.col-82{width:82%}.col-83{width:83%}.col-84{width:84%}.col-85{width:85%}.col-86{width:86%}.col-87{width:87%}.col-88{width:88%}.col-89{width:89%}.col-90{width:90%}.col-91{width:91%}.col-92{width:92%}.col-93{width:93%}.col-94{width:94%}.col-95{width:95%}.col-96{width:96%}.col-97{width:97%}.col-98{width:98%}.col-99{width:99%}.col-100{width:100%}`;
+	style.innerHTML += `.col{box-sizing:border-box;position:relative;float:left;min-height:1px}.col-1{width:1%}.col-2{width:2%}.col-3{width:3%}.col-4{width:4%}.col-5{width:5%}.col-6{width:6%}.col-7{width:7%}.col-8{width:8%}.col-9{width:9%}.col-10{width:10%}.col-11{width:11%}.col-12{width:12%}.col-13{width:13%}.col-14{width:14%}.col-15{width:15%}.col-16{width:16%}.col-17{width:17%}.col-18{width:18%}.col-19{width:19%}.col-20{width:20%}.col-21{width:21%}.col-22{width:22%}.col-23{width:23%}.col-24{width:24%}.col-25{width:25%}.col-26{width:26%}.col-27{width:27%}.col-28{width:28%}.col-29{width:29%}.col-30{width:30%}.col-31{width:31%}.col-32{width:32%}.col-33{width:33%}.col-34{width:34%}.col-35{width:35%}.col-36{width:36%}.col-37{width:37%}.col-38{width:38%}.col-39{width:39%}.col-40{width:40%}.col-41{width:41%}.col-42{width:42%}.col-43{width:43%}.col-44{width:44%}.col-45{width:45%}.col-46{width:46%}.col-47{width:47%}.col-48{width:48%}.col-49{width:49%}.col-50{width:50%}.col-51{width:51%}.col-52{width:52%}.col-53{width:53%}.col-54{width:54%}.col-55{width:55%}.col-56{width:56%}.col-57{width:57%}.col-58{width:58%}.col-59{width:59%}.col-60{width:60%}.col-61{width:61%}.col-62{width:62%}.col-63{width:63%}.col-64{width:64%}.col-65{width:65%}.col-66{width:66%}.col-67{width:67%}.col-68{width:68%}.col-69{width:69%}.col-70{width:70%}.col-71{width:71%}.col-72{width:72%}.col-73{width:73%}.col-74{width:74%}.col-75{width:75%}.col-76{width:76%}.col-77{width:77%}.col-78{width:78%}.col-79{width:79%}.col-80{width:80%}.col-81{width:81%}.col-82{width:82%}.col-83{width:83%}.col-84{width:84%}.col-85{width:85%}.col-86{width:86%}.col-87{width:87%}.col-88{width:88%}.col-89{width:89%}.col-90{width:90%}.col-91{width:91%}.col-92{width:92%}.col-93{width:93%}.col-94{width:94%}.col-95{width:95%}.col-96{width:96%}.col-97{width:97%}.col-98{width:98%}.col-99{width:99%}.col-100{width:100%}.col-1_1{width:100%}.col-1_2{width:50%}.col-1_3{width:33.33%}.col-2_3{width:66.66%}.col-1_4{width:25%}.col-1_5{width:20%}.col-1_6{width:16.66%}.col-1_7{width:14.28%}.col-1_8{width:12.5%}.col-1_9{width:11.11%}.col-1_10{width:10%}.col-1_11{width:9.09%}.col-1_12{width:8.33%}`;
 	
 	document.getElementsByTagName('head')[0].appendChild(style);
 }
@@ -481,9 +527,9 @@ var blockEngineStart = function(main,id,data) {
 
 	/* hide the first delete button if no blocks, else show it */
 	if(doubleBlockCount < 2) {
-		buttons.childNodes[buttonCount - 1].children[0].style.visibility = 'hidden';
+		buttons.childNodes[0].children[buttonCount - 1].style.visibility = 'hidden';
 	} else {
-		buttons.childNodes[buttonCount - 1].children[0].style.visibility = 'visible';
+		buttons.childNodes[0].children[buttonCount - 1].style.visibility = 'visible';
 	}
 
 	while(count < doubleBlockCount) {
@@ -683,22 +729,48 @@ var blockStyle = function() {
 		none
 */
 var blockScripts = function() {
-	var existing = [];
+	/* 
+		function that fetches all scripts, synchronously 
+		
+		existing - array of src already retrieved
+		scriptArray - array of objects containing script data
+		position - position in scriptArray to retrieve
+		wait - name of object that must exist before fetching next script
+		tries - number of times to wait for wait object before giving up
+	*/
+	function fetchScript(existing,scriptArray,position,wait,tries) {
+		if(wait && typeof window[wait] == 'undefined' && tries < 4) {
+			tries++;
+			setTimeout(function() { fetchScript(existing,scriptArray,position,wait,tries) },1000);
+		} else {
+			var element = scriptArray[position];
+			if(element.source === '' || existing.indexOf(element.source) < 0) {
+				existing.push(element.source);
+
+				/* attach the blocks dependencies */
+				var scripts = document.createElement('script');
+				scripts.src = element.source;
+				scripts.type = element.type;
+				if(element.integrity) {
+					scripts.integrity = element.integrity;
+				}
+				scripts.innerHTML = element.inner;
+				document.getElementsByTagName('head')[0].appendChild(scripts);
+	
+				/* fetch next script */
+				if(scriptArray.length > (position + 1)) {
+					fetchScript(existing,scriptArray,position+1,element.wait,0);
+				}
+			}
+		}
+	}
+	
+	/* get script data for each extensibles */
 	for(var prop in extensibles)(function(prop) {
 		if(extensibles.hasOwnProperty(prop)) {
 			var scriptArray = extensibles[prop].fetchDependencies();
 			if(scriptArray !== null) {
-				scriptArray.forEach(function(element) {
-					if(element.source === '' || existing.indexOf(element.source) < 0) {
-						existing.push(element.source);
-						/* attach the blocks dependencies */
-						var scripts = document.createElement('script');
-						scripts.src = element.source;
-						scripts.type = element.type;
-						scripts.innerHTML = element.inner;
-						document.getElementsByTagName('head')[0].appendChild(scripts);
-					}
-				});
+				fetchScript([],scriptArray,0,'',0);
 			}
 		}
 	})(prop);
@@ -721,38 +793,64 @@ var blockButtons = function(bid) {
 
 	/* this div will hold the buttons inside of it */
 	var buttonDiv = document.createElement('div');
-	buttonDiv.setAttribute('class','bengine-blockbtns row');
+	buttonDiv.setAttribute('class','row');
 	buttonDiv.setAttribute('id','bengine-b' + g_bengine.main + bid);
 
-	/// there should prob be better styling than this
-	/// if greater than 10, buttons won't fit...
-	var percentageWidth = 100 / (Object.keys(extensibles).length + 1);
+	var catDiv = document.createElement("div");
+	catDiv.setAttribute("id","bengine-cat" + g_bengine.main + bid);
+	catDiv.setAttribute("class","bengine-blockbtns row");
+	buttonDiv.appendChild(catDiv);
 
-	/* the following are all of the buttons */
-	for(var prop in extensibles)(function(prop) {
-		if(extensibles.hasOwnProperty(prop)) {
-			var colDiv = document.createElement('div');
-			colDiv.setAttribute('class','col col-' + percentageWidth);
+	var categoryArray = ["code","design","math","media","text","quiz"];
+	
+	categoryArray.forEach(function(element) {
+		var colDiv = document.createElement('div');
+		colDiv.setAttribute('class','col col-1_7');
+		
+		/* create category button */
+		var btn = document.createElement('button');
+		btn.onclick = function() {
+			catDiv.setAttribute("style","display:none;visibility:hidden");
+			var row = document.getElementById("bengine" + g_bengine.main + element + "-" + bid);
+			row.setAttribute("style","display:block;visibility:visible;");
+		};
+		btn.setAttribute("class","bengine-blockbtn bengine-addbtn");
+		btn.innerHTML = element;
+		
+		/* create div for block buttons in category */
+		var subRow = document.createElement("div");
+		subRow.setAttribute("id","bengine" + g_bengine.main + element + "-" + bid);
+		subRow.setAttribute("class","bengine-blockbtns row");
+		subRow.setAttribute("style","display:none;visibility:hidden;");
+		buttonDiv.appendChild(subRow);
+		
+		/* create back button to categories */
+		var colBackDiv = document.createElement('div');
+		colBackDiv.setAttribute('class','col col-1_' + (options.categoryCounts[element] + 1));
+		
+		var btnBack = document.createElement('button');
+		btnBack.onclick = function() {
+			catDiv.setAttribute("style","display:block;visibility:visible");
+			var row = document.getElementById("bengine" + g_bengine.main + element + "-" + bid);
+			row.setAttribute("style","display:none;visibility:hidden;");
+		};
+		btnBack.setAttribute("class","bengine-blockbtn bengine-addbtn");
+		btnBack.innerHTML = "&larr;";
+		
+		colBackDiv.appendChild(btnBack);
+		subRow.appendChild(colBackDiv);
 
-			var btn = document.createElement('button');
-			btn.onclick = function() {
-				addBlock(bid,extensibles[prop].type);
-			};
-			btn.setAttribute("class","bengine-blockbtn addbtn");
-			btn.innerHTML = extensibles[prop].name;
-
-			colDiv.appendChild(btn);
-			buttonDiv.appendChild(colDiv);
-		}
-	})(prop);
-
-	/* add the delete button */
+		/* append everything */
+		colDiv.appendChild(btn);
+		catDiv.appendChild(colDiv);
+	});
+	
 	var delDiv = document.createElement('div');
-	delDiv.setAttribute('class','col col-' + percentageWidth);
+	delDiv.setAttribute('class','col col-1_7');
 
 	var delBtn = document.createElement('button');
 	delBtn.setAttribute('id','bengine-d' + g_bengine.main + bid);
-	delBtn.setAttribute("class","bengine-blockbtn delbtn");
+	delBtn.setAttribute("class","bengine-blockbtn bengine-delbtn");
 	delBtn.onclick = function() {
 		deleteBlock(bid);
 	};
@@ -760,7 +858,30 @@ var blockButtons = function(bid) {
 	delBtn.innerHTML = "&darr;";
 
 	delDiv.appendChild(delBtn);
-	buttonDiv.appendChild(delDiv);
+	catDiv.appendChild(delDiv);
+	
+	/* add block buttons to each category */
+	for(var prop in extensibles)(function(prop) {
+		if(extensibles.hasOwnProperty(prop)) {
+			var btn = document.createElement('button');
+			btn.onclick = function() {
+				addBlock(bid,extensibles[prop].type);
+				catDiv.setAttribute("style","display:block;visibility:visible");
+				var row = document.getElementById("bengine" + g_bengine.main + extensibles[prop].category + "-" + bid);
+				row.setAttribute("style","display:none;visibility:hidden;");
+			};
+			btn.setAttribute("class","bengine-blockbtn bengine-addbtn");
+			btn.innerHTML = extensibles[prop].name;
+
+			var subRow = buttonDiv.childNodes[categoryArray.indexOf(extensibles[prop].category) + 1];
+			
+			var colDiv = document.createElement('div');
+			colDiv.setAttribute('class','col col-1_' + (options.categoryCounts[extensibles[prop].category] + 1));
+
+			colDiv.appendChild(btn);
+			subRow.appendChild(colDiv);
+		}
+	})(prop);
 
 	return buttonDiv;
 };

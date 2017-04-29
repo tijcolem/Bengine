@@ -1,6 +1,7 @@
 BengineConfig.extensibles.xcode = new function Xcode() {
 	this.type = "xcode";
-	this.name = "code";
+	this.name = "hljs code";
+	this.category = "code";
 	this.upload = false;
 
 	var xcodeObj = this;
@@ -19,6 +20,7 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 	this.fetchDependencies = function() {
 		var highlightjs = {
 			inner: '',
+			integrity: '',
 			source: '//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/highlight.min.js',
 			type: 'text/javascript'
 		};
@@ -193,4 +195,6 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 			hljs.highlightBlock(block);
 		}
 	};
+
+	this.g = {};
 };

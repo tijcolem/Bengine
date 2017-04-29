@@ -1,6 +1,7 @@
 BengineConfig.extensibles.title = new function Title() {
 	this.type = "title";
 	this.name = "title";
+	this.category = "text";
 	this.upload = false;
 
 	var titleObj = this;
@@ -21,7 +22,13 @@ BengineConfig.extensibles.title = new function Title() {
 	}
 
 	this.insertContent = function(block,content) {
-		var str = '<input type="text" class="xTit" maxlength="' + blocklimit + '" value="' + deparseBlock(content) + '">';
+		var str;
+		if(content) {
+			str = '<input type="text" class="xTit" maxlength="' + blocklimit + '" value="' + deparseBlock(content) + '">';
+		} else {
+			str = '<input type="text" class="xTit" maxlength="' + blocklimit + '" placeholder="Title">';
+		}
+
 		block.innerHTML = str;
 
 		return block;
@@ -85,4 +92,8 @@ BengineConfig.extensibles.title = new function Title() {
 		}`;
 		return stylestr;
 	};
+	
+	this.f = {};
+	
+	this.g = {};
 };

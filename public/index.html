@@ -4,9 +4,6 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.core.css">
-		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.default.css">
-
 		<title>Bengine</title>
 	</head>
 
@@ -16,24 +13,26 @@
 		<footer class="footer"></footer>
 
 		<!-- load bengine -->
+		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.core.css" defer>
+		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.default.css" defer>
 		<script src="https://rawgit.com/fabien-d/alertify.js/0.3/src/alertify.js"></script>
 		<script src="js/bengine.js"></script>
 		<script src="blocks/asciimath.js"></script>
 		<script src="blocks/audio.js"></script>
-		<script src="blocks/code.js"></script>
+		<script src="blocks/hljscode.js"></script>
+		<script src="blocks/image.js"></script>
+		<script src="blocks/latex.js"></script>
 		<!--<script src="blocks/svg.js"></script>-->
 		<script src="blocks/pdfslide.js"></script>
-		<script src="blocks/video.js"></script>
-		<script src="blocks/image.js"></script>
 		<script src="blocks/title.js"></script>
+		<script src="blocks/video.js"></script>
 		<script src="blocks/wysiwyg.js"></script>
-		<script src="blocks/latex.js"></script>
 		<script>
 			window.addEventListener('DOMContentLoaded', function() {
 				BengineConfig.options.defaultText = true;
 				BengineConfig.options.enableSave = false;
 				
-				var wiseEngine = new Bengine(BengineConfig.extensibles,BengineConfig.funcs,BengineConfig.options);
+				var indexEngine = new Bengine(BengineConfig.extensibles,BengineConfig.funcs,BengineConfig.options);
 				
 				var Engine_Div = "content";
 				var Type_ID = "";
@@ -41,7 +40,9 @@
 				var Directory_ID = 0;
 				var Engine_Data = [];
 				
-				wiseEngine.blockEngineStart(Engine_Div,[Type_ID,Page_ID,Directory_ID],Engine_Data);
+				indexEngine.blockEngineStart(Engine_Div,[Type_ID,Page_ID,Directory_ID],Engine_Data);
+				
+				window.indexEngine = indexEngine; // for debugging
 		    });
 		</script>
 	

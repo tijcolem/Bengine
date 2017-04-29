@@ -1,6 +1,7 @@
 BengineConfig.extensibles.slide = new function Slide() {
 	this.type = "slide";
 	this.name = "slide";
+	this.category = "media";
 	this.upload = true;
 
 	var slideObj = this;
@@ -16,6 +17,7 @@ BengineConfig.extensibles.slide = new function Slide() {
 	this.fetchDependencies = function() {
 		var pdfjs = {
 			inner: '',
+			integrity: '',
 			source: 'https://mozilla.github.io/pdf.js/build/pdf.js',
 			type: 'text/javascript'
 		};
