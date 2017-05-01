@@ -1,6 +1,6 @@
 
-
 [![Build Status](https://travis-ci.org/efossas/Bengine.svg?branch=master)](https://travis-ci.org/efossas/Bengine)
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/BlockEngine/Lobby)
 
 # Bengine
 A javascript browser block engine.
