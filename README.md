@@ -20,7 +20,7 @@ If you would like to contribute to this project, please consider coding the foll
 - D3js blocks
 - draw.io block
 
-## Getting Started
+## Getting Started Locally
 
 Download & enter the repo.
 
@@ -44,6 +44,22 @@ node main 3030
 To view a page with all blocks installed, go to [http://localhost:3030](http://localhost:3030 "All Blocks")
 
 For instructions on how to make & test a new block, go to [http://localhost:3030/playground.html](http://localhost:3030/playground.html "Create New Blocks")
+
+## Getting Started Docker
+
+There is a docker image with everything installed and ready to go: [Bengine Docker Image](https://hub.docker.com/r/ericfossas/bengine/ "Bengine Docker")
+
+Download and run the container with port 80 mapped to some host port.
+
+Enter the container and run the following commands:
+
+```
+service apache2 restart
+cd /var/www/bengine
+node main 3030
+```
+
+You should be able to see Bengine by opening a browser and going to http://localhost:PORT where PORT is the host port you chose to map to the docker container.
 
 ## Next Steps
 
