@@ -1,3 +1,7 @@
+
+
+[![Build Status](https://travis-ci.org/efossas/Bengine.svg?branch=master)](https://travis-ci.org/efossas/Bengine)
+
 # Bengine
 A javascript browser block engine.
 
