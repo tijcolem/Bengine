@@ -14,9 +14,10 @@ For a simple example of the block engine, visit [wisepool playground](http://wis
 
 If you would like to contribute to this project, please consider coding the following wanted extensibles:
 
-- CodeMirror block
 - PythonTutor block
+- Chartjs block
 - Blockly block
+- D3js blocks
 - draw.io block
 
 ## Getting Started
