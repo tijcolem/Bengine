@@ -4,9 +4,11 @@
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/BlockEngine/Lobby)
 
 # Bengine
-A javascript browser block engine.
+A browser block engine.
 
-Bengine handles the creating and deleting of "blocks", which are just html elements. You can create custom blocks with special javascript functionality and add them to Bengine. Those custom blocks are coded into contructor objects which are called "extensibles".
+Bengine handles the creating and deleting of "blocks", which are just html elements. You can create custom blocks with special javascript functionality and add them to Bengine. Those custom blocks are coded into constructor objects which are called "extensibles".
+
+Bengine also supports Opaque, LTI, & API protocols for acting as a quiz engine for learning management systems.
 
 For a simple example of the block engine, visit [wisepool playground](http://wisepool.io/play).
 
