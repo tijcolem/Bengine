@@ -178,7 +178,7 @@ module.exports = function(config) {
 	/* start http server */
 	if(config["port"]["http"]) {
 		http.createServer(app).listen(config["port"]["http"],function() {
-			console.log("bengine http server listening at " + config["port"]);
+			console.log("bengine http server listening at " + config["port"]["http"]);
 		});
 	}
 	
@@ -193,7 +193,7 @@ module.exports = function(config) {
 		    key: privateKey,
 		    cert: certificate
 		}, app).listen(config["port"]["https"],function() {
-			console.log("bengine https server listening at " + config["port"]);
+			console.log("bengine https server listening at " + config["port"]["https"]);
 		});
 	}
 
