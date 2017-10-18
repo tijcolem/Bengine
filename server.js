@@ -184,6 +184,7 @@ module.exports = function(config) {
 	
 	if(config["port"]["https"]) {
 		/* get ssl certificates */
+		const fs = require("fs");
 		var privateKey = fs.readFileSync(__dirname + '/ssl/bengine.key');
 		var certificate = fs.readFileSync(__dirname + '/ssl/bengine.pem');
 		
