@@ -1,27 +1,24 @@
 BengineConfig.extensibles.xmath = new function Xmath() {
 	this.type = "xmath";
 	this.name = "asciimath";
-	this.category = "math";
+	this.category = "text";
 	this.upload = false;
 
 	var xmathObj = this;
 	var blocklimit = 2047;
-
-	var parseBlock = function(blockText) {
-		var element = document.createElement('div');
-		element.innerHTML = blockText.replace(/\\/g,"\\\\").replace(/</g,"@@LT").replace(/>/g,"@@RT").replace(/<br>/g,"@@BR");
-		return encodeURIComponent(element.textContent).replace(/'/g,"%27");
-	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText).replace(/\\\\/g,'\\').replace(/@@LT/g,"<").replace(/@@RT/g,">").replace(/@@BR/g,"<br>").replace(/%27/g,"'");
-	};
+	
+	var emptyObject = function(obj) {
+		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
+			return true;
+		}
+		return false;
+	}
 	
 	this.fetchDependencies = function() {
 		var mathjax = {
 			inner: '',
 			integrity: '',
-			source: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML',
+			source: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML',
 			type: 'text/javascript'
 		};
 		var mathjaxConfig = {
@@ -34,7 +31,7 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 		return [mathjax,mathjaxConfig];
 	};
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {		
 		var mathpreview = document.createElement('div');
 		mathpreview.setAttribute('class','mathImage');
 
@@ -45,10 +42,10 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 		};
 		mathBlock.contentEditable = true;
 		/* defaul text */
-		if(BengineConfig.options.defaultText && content === "") {
+		if(BengineConfig.options.defaultText && emptyObject(bcontent)) {
 			mathBlock.innerHTML = 'AsciiMath \\ Mark \\ Up: \\ \\ \\ sum_(i=1)^n i^3=((n(n+1))/2)^2';
 		} else {
-			mathBlock.innerHTML = deparseBlock(content);
+			mathBlock.innerHTML = bcontent['content'];
 		}
 
 		/* set limit function on keydown event */
@@ -92,19 +89,17 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 	};
 
 	this.saveContent = function(bid) {
-		/* replace() is for escaping backslashes */
-		var blockContent = document.getElementById(bid).children[1].innerHTML;
-		return parseBlock(blockContent);
+		return {'content':document.getElementById(bid).children[1].innerHTML};
 	};
 
-	this.showContent = function(block,content) {
+	this.showContent = function(block,bcontent) {
 		var mathpreview = document.createElement('div');
 		mathpreview.setAttribute('class','mathImage-show');
 
 		var mathBlock = document.createElement('div');
 		mathBlock.setAttribute('class','xMat');
 		mathBlock.setAttribute('style','display:none;visibility:hidden;');
-		mathBlock.innerHTML = deparseBlock(content);
+		mathBlock.innerHTML = bcontent['content'];
 
 		block.appendChild(mathpreview);
 		block.appendChild(mathBlock);
@@ -120,11 +115,10 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 			width: 100%;
 			height: auto;
 			border: 1px solid black;
-			border-radius: 2px;
 			background-color: white;
 
 			padding: 8px 6px;
-			margin: 2px 0 0 0;
+			margin: 0;
 			box-sizing: border-box;
 
 			font-family: Arial, Helvetica, sans-serif;
@@ -135,7 +129,6 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 			width: 100%;
 			height: auto;
 			border: 1px solid black;
-			border-radius: 2px;
 			background-color: white;
 			
 			text-align:center;

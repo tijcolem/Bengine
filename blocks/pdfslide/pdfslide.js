@@ -3,16 +3,16 @@ BengineConfig.extensibles.slide = new function Slide() {
 	this.name = "slide";
 	this.category = "media";
 	this.upload = true;
+	this.accept = ".pdf,.ppt,.pptx,.pps,.ppsx";
 
 	var slideObj = this;
 	
-	var parseBlock = function(blockText) {
-		return encodeURIComponent(blockText);
-	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText);
-	};
+	var emptyObject = function(obj) {
+		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
+			return true;
+		}
+		return false;
+	}
 	
 	this.fetchDependencies = function() {
 		var pdfjs = {
@@ -25,7 +25,7 @@ BengineConfig.extensibles.slide = new function Slide() {
 		return [pdfjs];
 	}
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {
 		/* data-page attribute keeps track of which page is being displayed */
 		var canvas = document.createElement("canvas");
 		canvas.setAttribute("class","xSli");
@@ -35,9 +35,9 @@ BengineConfig.extensibles.slide = new function Slide() {
 		block.appendChild(canvas);
 
 		/* if block was just made, don't try to load pdf */
-		if (content !== "") {
-			PDFJS.getDocument(deparseBlock(content)).then(function(pdfObj) {
-				slideObj.g.pdfObjects[content] = pdfObj;
+		if (!emptyObject(bcontent)) {
+			PDFJS.getDocument(bcontent['url']).then(function(pdfObj) {
+				slideObj.g.pdfObjects[bcontent['url']] = pdfObj;
 
 				var tag = block.childNodes[0];
 
@@ -92,22 +92,23 @@ BengineConfig.extensibles.slide = new function Slide() {
 	};
 
 	this.saveContent = function(bid) {
+		/* replace() is for escaping backslashes and making relative path */
 		var slidestr = document.getElementById(bid).children[0].id;
-		return parseBlock(slidestr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
+		return {'url':slidestr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),"")};
 	};
 
-	this.showContent = function(block,content) {
+	this.showContent = function(block,bcontent) {		
 		/* data-page attribute keeps track of which page is being displayed */
 		var canvas = document.createElement("canvas");
 		canvas.setAttribute("class","xSli-show");
-		canvas.setAttribute("id",content);
+		canvas.setAttribute("id",bcontent['url']);
 		canvas.setAttribute("data-page","1");
 
 		block.appendChild(canvas);
 
 		/* if block was just made, don't try to load pdf */
-		if (content !== "") {
-			PDFJS.getDocument(deparseBlock(content)).then(function(pdfObj) {
+		if (bcontent !== "") {
+			PDFJS.getDocument(content).then(function(pdfObj) {
 				slideObj.g.pdfObjects[content] = pdfObj;
 
 				var tag = block.childNodes[0];

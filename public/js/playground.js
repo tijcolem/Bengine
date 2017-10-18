@@ -1,16 +1,18 @@
 var playBlockStartCode = `function() {
 
 /**************************************
-type (string) - should match property name you add to extensibles, must be 5 letters
+type (string) - should match property name you add to extensibles, must be 5 letters or less
 name (string) - the name that appears to the user to create your block
-category (string) - must be one of these [code, design, math, media, text, quiz]
+category (string) - must be one of these [code, media, text, qengine]
 upload (boolean) - whether this block requires uploading media
+accept (string) - comma-separated extensions to accept for uploading media
 ***************************************/
 
 this.type = "tarea";
 this.name = "textarea";
 this.category = "text";
 this.upload = false;
+this.accept = "";
 
 /**************************************
 fetchDependencies()

@@ -1,21 +1,22 @@
 BengineConfig.extensibles.xcode = new function Xcode() {
 	this.type = "xcode";
-	this.name = "hljs code";
-	this.category = "code";
+	this.name = "hljs";
+	this.category = "text";
 	this.upload = false;
 
 	var xcodeObj = this;
 	var blocklimit = 15; // these are lines <br>, not chars
 
-	var parseBlock = function(blockText) {
-		var element = document.createElement('div');
-		element.innerHTML = blockText.replace(/<span[^>]*>/g,"").replace(/<\/span>/g,"").replace(/</g,"@@LT").replace(/>/g,"@@RT").replace(/<br>/g,"@@BR");
-		return encodeURIComponent(element.textContent).replace(/'/g,"%27");
+	var removeHighlights = function(blockText) {
+		return blockText.replace(/<span[^>]*>/g,"").replace(/<\/span>/g,"");
 	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText).replace(/@@LT/g,"<").replace(/@@RT/g,">").replace(/@@BR/g,"<br>").replace(/%27/g,"'");
-	};
+	
+	var emptyObject = function(obj) {
+		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
+			return true;
+		}
+		return false;
+	}
 	
 	this.fetchDependencies = function() {
 		var highlightjs = {
@@ -28,7 +29,7 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 		return [highlightjs];
 	}
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {
 		var codeBlock = document.createElement("code");
 		codeBlock.setAttribute("class","xCde");
 		codeBlock.onblur = function() {
@@ -37,10 +38,10 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 		codeBlock.contentEditable = true;
 
 		/* defaul text */
-		if(BengineConfig.options.defaultText && content === "") {
+		if(BengineConfig.options.defaultText && emptyObject(bcontent)) {
 			codeBlock.innerHTML = "var description = 'Programming languages are auto-detected.';<br>function default(parameter) {<br>&nbsp;&nbsp;&nbsp;&nbsp;var instructions = 'When you click outside the block syntax is highlighted.';<br>&nbsp;&nbsp;&nbsp;&nbsp;alert(parameter + instructions);<br>}<br>default(description);";
 		} else {
-			codeBlock.innerHTML = deparseBlock(content);
+			codeBlock.innerHTML = bcontent['content'];
 		}
 
 		block.appendChild(codeBlock);
@@ -82,14 +83,13 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 	};
 
 	this.saveContent = function(bid) {
-		var blockContent = document.getElementById(bid).children[0].innerHTML;
-		return parseBlock(blockContent);
+		return {'content':removeHighlights(document.getElementById(bid).children[0].innerHTML)};
 	};
 
-	this.showContent = function(block,content) {
+	this.showContent = function(block,bcontent) {		
 		var codeBlock = document.createElement("div");
 		codeBlock.setAttribute("class","xCde-show");
-		codeBlock.innerHTML = deparseBlock(content);
+		codeBlock.innerHTML = bcontent['content'];
 
 		block.appendChild(codeBlock);
 		this.f.renderCode(codeBlock);

@@ -7,8 +7,12 @@
 		<title>Bengine</title>
 	</head>
 
-	<body class="body">
-		<div id="content"></div>
+	<body class="body" style="background-color:black">
+		<div class="col col-20"></div>
+			<div class="col col-60">
+				<div id="content"></div>
+			</div>
+		<div class="col col-20"></div>
 		
 		<footer class="footer"></footer>
 
@@ -25,6 +29,7 @@
 		<script src="blocks/latex.js"></script>
 		<!--<script src="blocks/svg.js"></script>-->
 		<script src="blocks/pdfslide.js"></script>
+		<script src="blocks/sage.js"></script>
 		<script src="blocks/title.js"></script>
 		<script src="blocks/video.js"></script>
 		<script src="blocks/wysiwyg.js"></script>
@@ -32,7 +37,7 @@
 		<script>
 			window.addEventListener('DOMContentLoaded', function() {
 				BengineConfig.options.defaultText = true;
-				BengineConfig.options.enableSave = false;
+				BengineConfig.options.enableSave = true;
 				
 				var indexEngine = new Bengine(BengineConfig.extensibles,BengineConfig.funcs,BengineConfig.options);
 				

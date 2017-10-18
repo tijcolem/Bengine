@@ -7,24 +7,21 @@ BengineConfig.extensibles.title = new function Title() {
 	var titleObj = this;
 	var blocklimit = 64;
 
-	var parseBlock = function(blockText) {
-		var element = document.createElement('div');
-		element.innerHTML = blockText.replace(/</g,"@@LT").replace(/>/g,"@@RT").replace(/<br>/g,"@@BR");
-		return encodeURIComponent(element.textContent).replace(/'/g,"%27");
-	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText).replace(/@@LT/g,"<").replace(/@@RT/g,">").replace(/@@BR/g,"<br>").replace(/%27/g,"'");
-	};
+	var emptyObject = function(obj) {
+		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
+			return true;
+		}
+		return false;
+	}
 	
 	this.fetchDependencies = function() {
 		return null;
 	}
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {
 		var str;
-		if(content) {
-			str = '<input type="text" class="xTit" maxlength="' + blocklimit + '" value="' + deparseBlock(content) + '">';
+		if(!emptyObject(bcontent)) {
+			str = '<input type="text" class="xTit" maxlength="' + blocklimit + '" value="' + bcontent['content'] + '">';
 		} else {
 			str = '<input type="text" class="xTit" maxlength="' + blocklimit + '" placeholder="Title">';
 		}
@@ -39,12 +36,11 @@ BengineConfig.extensibles.title = new function Title() {
 	};
 
 	this.saveContent = function(bid) {
-		var blockContent = document.getElementById(bid).children[0].value;
-		return parseBlock(blockContent);
+		return {'content':document.getElementById(bid).children[0].value};
 	};
 
-	this.showContent = function(block,content) {
-		var str = '<div class="xTit-show">' + deparseBlock(content) + '</div>';
+	this.showContent = function(block,bcontent) {
+		var str = '<div class="xTit-show">' + bcontent['content'] + '</div>';
 		block.innerHTML = str;
 
 		return block;
@@ -56,7 +52,6 @@ BengineConfig.extensibles.title = new function Title() {
 			width: 100%;
 			height: 32px;
 			border: 1px solid black;
-			border-radius: 2px;
 
 			padding: 4px 6px;
 			margin: 0px;
@@ -77,7 +72,6 @@ BengineConfig.extensibles.title = new function Title() {
 			background-color: rgba(118, 118, 118, 0.15);
 			border: 1px solid black;
 			border-bottom-color: rgba(118, 118, 118, 0.15);
-			border-radius: 2px;
 
 			padding: 6px 6px;
 			margin: 0px;

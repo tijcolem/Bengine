@@ -3,29 +3,22 @@ BengineConfig.extensibles.audio = new function Audio() {
 	this.name = "audio";
 	this.category = "media";
 	this.upload = true;
+	this.accept = ".aac,.aiff,.m4a,.mp3,.ogg,.ra,.wav,.wma";
 
 	var audioObj = this;
-	
-	var parseBlock = function(blockText) {
-		return encodeURIComponent(blockText);
-	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText);
-	};
 
 	this.fetchDependencies = function() {
 		return null;
 	}
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {		
 		var audio = document.createElement("audio");
 		audio.setAttribute("class","xAud");
 		audio.volume = 0.8;
 		audio.setAttribute("controls","controls");
 
 		var audiosource = document.createElement("source");
-		audiosource.setAttribute("src",deparseBlock(content));
+		audiosource.setAttribute("src",bcontent['url']);
 		audiosource.setAttribute("type","audio/mpeg");
 
 		audio.appendChild(audiosource);
@@ -44,18 +37,19 @@ BengineConfig.extensibles.audio = new function Audio() {
 	};
 
 	this.saveContent = function(bid) {
+		/* replace() is for escaping backslashes and making relative path */
 		var mediastr = document.getElementById(bid).children[0].children[0].src;
-		return parseBlock(mediastr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
+		return {'url':mediastr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),"")};
 	};
 
-	this.showContent = function(block,content) {
+	this.showContent = function(block,bcontent) {
 		var audio = document.createElement("audio");
 		audio.setAttribute("class","xAud-show");
 		audio.volume = 0.8;
 		audio.setAttribute("controls","controls");
 
 		var audiosource = document.createElement("source");
-		audiosource.setAttribute("src",deparseBlock(content));
+		audiosource.setAttribute("src",bcontent['url']);
 		audiosource.setAttribute("type","audio/mpeg");
 
 		audio.appendChild(audiosource);

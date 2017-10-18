@@ -1,18 +1,17 @@
 BengineConfig.extensibles.mcode = new function Mcode() {
 	this.type = "mcode";
-	this.name = "cm code";
-	this.category = "code";
+	this.name = "codemirror";
+	this.category = "text";
 	this.upload = false;
 
 	var mcodeObj = this;
 
-	var parseBlock = function(blockText) {
-		return encodeURIComponent(blockText);
-	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText);
-	};
+	var emptyObject = function(obj) {
+		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
+			return true;
+		}
+		return false;
+	}
 	
 	this.fetchDependencies = function() {		
 		var cmjs = {
@@ -30,7 +29,7 @@ BengineConfig.extensibles.mcode = new function Mcode() {
 		return [cmjs,jslang];
 	}
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {
 		var cmMode = document.createElement("input");
 		cmMode.setAttribute("type","text");
 		cmMode.setAttribute("class","mCde-mode");
@@ -46,14 +45,13 @@ BengineConfig.extensibles.mcode = new function Mcode() {
 		/* defaul text */
 		var text = "";
 		var mode = "";
-		if(BengineConfig.options.defaultText && content === "") {
+		if(BengineConfig.options.defaultText && emptyObject(bcontent)) {
 			text = `This is a CodeMirror text editor. A list of commands can be found here: https://codemirror.net/doc/manual.html#commands
 A list of supported programming languages can be found here: https://github.com/codemirror/CodeMirror/tree/master/mode`;
 			mode = "javascript";
 		} else {
-			var mt = deparseBlock(content).split("@@^@@");
-			text = mt[1];
-			mode = mt[0];
+			mode = bcontent['mode'];
+			text = bcontent['content'];
 		}
 		
 		var CodeMirrorBlock = CodeMirror(cmBlock,{
@@ -77,16 +75,15 @@ A list of supported programming languages can be found here: https://github.com/
 	this.saveContent = function(bid) {
 		var blockMode = document.getElementById(bid).children[0].value;
 		var blockContent = document.getElementById(bid).children[1].children[0].CodeMirror.getValue();
-		return parseBlock(blockMode) + "@@^@@" + parseBlock(blockContent);
+		return {'mode':blockMode,'content':blockContent};
 	};
 
-	this.showContent = function(block,content) {
+	this.showContent = function(block,bcontent) {
 		var cmBlock = document.createElement("div");
 		cmBlock.setAttribute("class","mCde-show");
 		
-		var mt = deparseBlock(content).split("@@^@@");
-		var text = mt[1];
-		var mode = mt[0];
+		var mode = bcontent['mode'];
+		var text = bcontent['content'];
 		
 		var CodeMirrorBlock = CodeMirror(cmBlock,{
 		    value: text,
@@ -104,14 +101,16 @@ A list of supported programming languages can be found here: https://github.com/
 	this.styleBlock = function() {
 		var stylestr = `.mCde-mode {
 			width: 100%;
-			height: 24px;
 			padding: 5px 8px;
+			border: 1px solid black;
+			
+			display: inline-block;
+			box-sizing: border-box;
 			
 			font-size: 0.9em;
 		}
 		
 		.mCde, .mCde-show {
-			width: 100%;
 			min-height: 62px;
 			height: auto;
 			

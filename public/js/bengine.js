@@ -2,6 +2,12 @@
 /******
 	Title: Block Engine
 	This is the front-end for the Block Engine.
+	
+	The following is a list of DOM ids you can use to display Bengine info:
+	
+	bengine-savestatus-[engine-name]-			<div> : displays whether the page is saved or not
+	bengine-progressbar-[engine-name]-			<progress> : displays save/upload progress
+	
 ******/
 
 /* list any objects js dependencies */
@@ -16,79 +22,182 @@ var BengineConfig = {
 	options: {}
 }
 
+/***
+	Bengine
+	
+	Public Attributes
+
+		options	: object
+			- bengine configuration options
+
+			blockLimit : number	: 8		
+				- number of blocks allowed on page
+			
+			enableSave : boolean : true
+				- enable save function, bengine.saveBlocks() will send block info to DOMAIN/save
+			
+			enableSingleView : boolean : false
+				- enable single view, bengine.blockContentShow() will display blocks as a slideshow
+			
+			loadStyles : boolean : true
+				- load bengine css styles. if false, you should supply your own bengine styles
+			
+			mediaLimit : number : 100
+				- number of megabytes to limit media upload sizes to
+			
+			playableMediaLimit : number : 180
+				- number of seconds to limie media upload play times to
+			
+			swidth : string : 900px
+				- the width of the page before bengine goes into mobile responsive view
+			
+		resources : object
+			- any resources created by qengine blocks are stored here
+		
+		variables : object
+			- any variables created by qengine blocks are stored here
+			
+			qengine : object
+				- the only default namespace that comes with a new bengine instance. it will contain 'randomseed'
+	
+	Public Methods
+	
+		blockContentShow
+		
+		blockEngineStart
+		
+		saveBlocks
+		
+		revertBlocks
+	
+	Private Attributes
+	
+		categoryCounts : object
+			- keeps track of how many blocks for each block type are in the extensibles
+			
+			code : number
+				- the number of code blocks in the extensibles
+			
+			media : number
+				- the number of media blocks in the extensibles
+			
+			text : number
+				- the number of text blocks in the extensibles
+			
+			qengine : number
+				- the number of qengine blocks in the extensibles
+	
+		extensibles : object
+			- bengine block objects are attached to this
+	
+		main : string
+			- the name of this bengine instance. used to refer to this instance in the DOM by id
+	
+	Replaceable Private Methods
+	
+		createURL 
+			- creates a url based of the current one. 
+			
+			path : string
+				- the path to add to the url, protocol + // + domain + path
+		
+		progressFinalize
+			- updates progress bar, autosave bar, and save bar
+			
+			msg : string
+				- message to display on save bar
+			max : number
+				- max value to set on progress bar
+		
+		progressInitialize
+		
+		progressUpdate
+	
+	Non-Replaceable Private Methods
+		
+		countBlocks
+		
+		generateBlocks
+		
+		blockStyle
+		
+		blockScripts
+		
+		blockButtons
+		
+		runCodeBlock
+		
+		addRunBtn
+		
+		makeSpace
+		
+		insertBlock
+		
+		createBlock
+		
+		addBlock
+		
+		closeSpace
+		
+		removeBlock
+		
+		deleteBlock
+		
+		uploadMedia
+		
+***/
 function Bengine(extensibles,funcs,options) {
 
 /***
-	Section: Defaults
-
-	extensibles - used to store extensible blocks. hence, extensibles.newBlock should be an object that contains all of the necessary methods for block execution.
+	Section: Bengine Public Attributes
+	Create Bengine's public attributes
 ***/
 
-this.extensibles = extensibles;
+var _public = {};
+_public.options = options;
+_public.resources = {};
+_public.variables = {'qengine':{}};;
 
-var g_bengine = {};
-g_bengine.main = "";
-
-options.blockLimit = options.blockLimit || 8;
-options.enableSave = (options.enableSave !== false);
-options.enableSingleView = options.enableSingleView || false;
-options.loadStyles = (options.loadStyles !== false);
-options.mediaLimit = options.mediaLimit || 100; // mb
-options.playableMediaLimit = options.playableMediaLimit || 180; // seconds
-options.swidth = options.swidth || "900px";
-
-options.categoryCounts = {};
-options.categoryCounts.code = 0;
-options.categoryCounts.design = 0;
-options.categoryCounts.math = 0;
-options.categoryCounts.media = 0;
-options.categoryCounts.text = 0;
-options.categoryCounts.quiz = 0;
+this.options = _public.options;
+this.resources = _public.resources;
+this.variables = _public.variables;
 
 /***
-	Section: Validate Extensibles
+	Section: Bengine Private Attributes
+	Create Bengine's private attributes
 ***/
 
-var validExtAttr = ["type","name","category","upload","fetchDependencies","insertContent","afterDOMinsert","saveContent","showContent","styleBlock","f","g"];
+var _private = {};
+_private.categoryCounts = {};
+_private.extensibles = extensibles;
+_private.main = '';
 
-for(var prop in extensibles)(function(prop) {
-	var extensibleAttributes = Object.keys(extensibles[prop]);
-	if(extensibleAttributes.length === validExtAttr.length) {
-		for(let i = 0; i < validExtAttr; i++) {
-			if(extensibleAttributes[i] !== validExtAttr[i]) {
-				console.log("Bengine: invalid extensible configuration in " + extensibles[prop]);
-			}
-		}
-	} else {
-		console.log("Bengine: invalid extensible configuration in " + extensibles[prop]);
-	}
-	
-	if(extensibles.hasOwnProperty(prop)) {
-		switch(extensibles[prop].category) {
-			case "code":
-				options.categoryCounts.code++; break;
-			case "design":
-				options.categoryCounts.design++; break;
-			case "math":
-				options.categoryCounts.math++; break;
-			case "media":
-				options.categoryCounts.media++; break;
-			case "text":
-				options.categoryCounts.text++; break;
-			case "quiz":
-				options.categoryCounts.quiz++; break;
-			default:
-				throw new Error("Invalid Category In Extensibles");
-		}
-	}
-})(prop);
+/***
+	Section: Configuration Options
+	Load configuration options or set their default
+***/
+
+_public.options.blockLimit = options.blockLimit || 8;
+_public.options.enableSave = (options.enableSave !== false);
+_public.options.enableSingleView = options.enableSingleView || false;
+_public.options.loadStyles = (options.loadStyles !== false);
+_public.options.mediaLimit = options.mediaLimit || 100; // mb
+_public.options.playableMediaLimit = options.playableMediaLimit || 180; // seconds
+_public.options.swidth = options.swidth || "900px";
 
 /***
 	Section: Start Up Code
 	Any necessary start up code for Bengine goes here.
 ***/
 
-if(options.loadStyles) {
+this.variables.qengine.randomseed = Math.floor(Math.random() * 4294967296);
+
+_private.categoryCounts.code = 0;
+_private.categoryCounts.media = 0;
+_private.categoryCounts.text = 0;
+_private.categoryCounts.qengine = 0;
+
+if(_public.options.loadStyles) {
 	var style = document.createElement('style');
 	style.type = 'text/css';
 	style.innerHTML = `
@@ -139,16 +248,13 @@ if(options.loadStyles) {
 		padding: 0;
 	}
 	.bengine-blockbtns {
-		max-width: $site-width;
 		margin: 50px auto 0px auto;
 		position: relative;
 	}
 	
 	.bengine-blockbtn {
 		color: black;
-		border: 1px solid transparent;
-		border-color: black;
-		border-radius: 2px;
+		border: 1px solid black;
 	
 		width: 100%;
 	
@@ -163,10 +269,10 @@ if(options.loadStyles) {
 		font-weight: 400;
 	}
 	.bengine-addbtn {
-		background-color: #c8fff9;
+		background-color: white;
 	}
 	.bengine-addbtn:hover {
-		background-color: #82dad0;
+		background-color: lightgray;
 	}
 	.bengine-delbtn {
 		background-color: #ff1818;
@@ -174,7 +280,7 @@ if(options.loadStyles) {
 	.bengine-delbtn:hover {
 		background-color: #a81313;
 	}
-	@media screen and (max-width: ${options.swidth}) {
+	@media screen and (max-width: ${_public.options.swidth}) {
 	    .bengine-blockbtns { width: 100%; }
 		.bengine-blockbtn { width: 100%; }
 	}
@@ -185,6 +291,38 @@ if(options.loadStyles) {
 	
 	document.getElementsByTagName('head')[0].appendChild(style);
 }
+
+/***
+	Section: Validate Extensibles
+***/
+
+var validExtAttr = ["type","name","category","upload","accept","fetchDependencies","insertContent","afterDOMinsert","saveContent","showContent","styleBlock","f","g"];
+
+for(var prop in _private.extensibles)(function(prop) {
+	var extensibleAttributes = Object.keys(_private.extensibles[prop]);
+	
+	for(let i = 0; i < validExtAttr; i++) {
+		if(validExtAttr.includes(extensibleAttributes[i]) !== true) {
+			console.log("Bengine: invalid extensible configuration in " + _private.extensibles[prop]);
+		}
+	}
+	
+	if(_private.extensibles.hasOwnProperty(prop)) {
+		switch(_private.extensibles[prop].category) {
+			case "code":
+				_private.categoryCounts.code++; break;
+			case "media":
+				_private.categoryCounts.media++; break;
+			case "text":
+				_private.categoryCounts.text++; break;
+			case "qengine":
+				_private.categoryCounts.qengine++; break;
+			default:
+				throw new Error("Invalid Category In Extensibles");
+		}
+	}
+})(prop);
+
 
 /***
 	Section: Replaceable Functions
@@ -227,11 +365,10 @@ var emptyDiv = function(node) {
 
 		nothing - *
 */
-var createURL;
 if(funcs.hasOwnProperty('createURL') && typeof funcs.createURL === 'function') {
-	createURL = funcs.createURL;
+	_private.createURL = funcs.createURL;
 } else {
-	createURL = function(path) {
+	_private.createURL = function(path) {
 		var url = window.location.href;
 		var splitUrl = url.split("/");
 
@@ -258,19 +395,28 @@ if(funcs.hasOwnProperty('createURL') && typeof funcs.createURL === 'function') {
 
 		none - *
 */
-var progressFinalize;
 if(funcs.hasOwnProperty('progressFinalize') && typeof funcs.progressFinalize === 'function') {
-	progressFinalize = funcs.progressFinalize;
+	_private.progressFinalize = funcs.progressFinalize;
 } else {
-	progressFinalize = function(msg,max) {
-		document.getElementById("bengine-progressbar" + g_bengine.main).setAttribute("value",max);
-		document.getElementById("bengine-progressbar" + g_bengine.main).style.visibility = "hidden";
-		document.getElementById("bengine-progressbar" + g_bengine.main).style.display = "none";
+	_private.progressFinalize = function(msg,max) {
+		let progressbar = document.getElementById("bengine-progressbar" + _private.main);
+		if(progressbar !== null) {
+			progressbar.setAttribute("value",max);
+			progressbar.style.visibility = "hidden";
+			progressbar.style.display = "none";
+		}
 
-		document.getElementById("bengine-autosave" + g_bengine.main).style.visibility = "visible";
-		document.getElementById("bengine-autosave" + g_bengine.main).style.display = "block";
+		let autosave = document.getElementById("bengine-autosave" + _private.main);
+		if(autosave !== null) {
+			autosave.style.visibility = "visible";
+			autosave.style.display = "block";
 
-		document.getElementById("bengine-savestatus" + g_bengine.main).innerHTML = msg;
+		}
+		
+		let savebar = document.getElementById("bengine-savestatus" + _private.main)
+		if(savebar !== null) {
+			savebar.innerHTML = msg;
+		}
 	};
 }
 
@@ -286,20 +432,28 @@ if(funcs.hasOwnProperty('progressFinalize') && typeof funcs.progressFinalize ===
 
 		none - *
 */
-var progressInitialize;
 if(funcs.hasOwnProperty('progressInitialize') && typeof funcs.progressInitialize === 'function') {
-	progressInitialize = funcs.progressInitialize;
+	_private.progressInitialize = funcs.progressInitialize;
 } else {
-	progressInitialize = function(msg,max) {
-		document.getElementById("bengine-autosave" + g_bengine.main).style.visibility = "hidden";
-		document.getElementById("bengine-autosave" + g_bengine.main).style.display = "none";
+	_private.progressInitialize = function(msg,max) {
+		let autosave = document.getElementById("bengine-autosave" + _private.main);
+		if(autosave !== null) {
+			autosave.style.visibility = "hidden";
+			autosave.style.display = "none";
+		}
 
-		document.getElementById("bengine-progressbar" + g_bengine.main).setAttribute("value",0);
-		document.getElementById("bengine-progressbar" + g_bengine.main).setAttribute("max",max);
-		document.getElementById("bengine-progressbar" + g_bengine.main).style.visibility = "visible";
-		document.getElementById("bengine-progressbar" + g_bengine.main).style.display = "block";
-
-		document.getElementById("bengine-savestatus" + g_bengine.main).innerHTML = msg;
+		let progressbar = document.getElementById("bengine-progressbar" + _private.main);
+		if(progressbar !== null) {
+			progressbar.setAttribute("value",0);
+			progressbar.setAttribute("max",max);
+			progressbar.style.visibility = "visible";
+			progressbar.style.display = "block";
+		}
+		
+		let statusbar = document.getElementById("bengine-savestatus" + _private.main);
+		if(statusbar !== null) {
+			statusbar.innerHTML = msg;
+		}
 	};
 }
 
@@ -314,12 +468,14 @@ if(funcs.hasOwnProperty('progressInitialize') && typeof funcs.progressInitialize
 
 		none - *
 */
-var progressUpdate;
 if(funcs.hasOwnProperty('progressUpdate') && typeof funcs.progressUpdate === 'function') {
-	progressUpdate = funcs.progressUpdate;
+	_private.progressUpdate = funcs.progressUpdate;
 } else {
-	progressUpdate = function(value) {
-		document.getElementById("bengine-progressbar" + g_bengine.main).setAttribute("value",value);
+	_private.progressUpdate = function(value) {
+		let progressbar = document.getElementById("bengine-progressbar" + _private.main);
+		if(progressbar !== null) {
+			progressbar.setAttribute("value",value);
+		}
 	};
 }
 
@@ -349,7 +505,7 @@ if(funcs.hasOwnProperty('progressUpdate') && typeof funcs.progressUpdate === 'fu
 */
 this.blockContentShow = function(main,id,data) {
 	/* set object global, used to separate one engine from another */
-	g_bengine.main = "-" + main + "-";
+	_private.main = "-" + main + "-";
 
 	/* main div */
 	var mainDiv = document.getElementById(main);
@@ -362,22 +518,22 @@ this.blockContentShow = function(main,id,data) {
 	var enginediv;
 	enginediv = document.createElement('div');
 	enginediv.setAttribute('class','bengine-instance');
-	enginediv.setAttribute('id','bengine-instance' + g_bengine.main);
+	enginediv.setAttribute('id','bengine-instance' + _private.main);
 	mainDiv.appendChild(enginediv);
 
 	/* blocks */
 	var blocksdiv = document.createElement('div');
 	blocksdiv.setAttribute('class','bengine-x-blocks');
-	blocksdiv.setAttribute('id','bengine-x-blocks' + g_bengine.main);
+	blocksdiv.setAttribute('id','bengine-x-blocks' + _private.main);
 
 	/* append blocks div to engine div */
 	enginediv.appendChild(blocksdiv);
 
 	/* append block styles */
-	blockStyle();
+	_private.blockStyle();
 	
 	/* append block dependencies */
-	blockScripts();
+	_private.blockScripts();
 
 	var count = 0;
 	var i = 1;
@@ -385,10 +541,10 @@ this.blockContentShow = function(main,id,data) {
 
 	while(count < doubleBlockCount) {
 		/* create the block */
-		var block = generateBlock(i,data[count]);
-		var retblock = extensibles[data[count]].showContent(block,data[count + 1]);
+		var block = _private.generateBlock(i,data[count]);
+		var retblock = _private.extensibles[data[count]].showContent(block,data[count + 1]);
 
-		if(options.enableSingleView) {
+		if(_public.options.enableSingleView) {
 			retblock.children[0].className += " bengine-block-style-embed";
 		} else {
 			retblock.children[0].className += " bengine-block-style";
@@ -396,10 +552,10 @@ this.blockContentShow = function(main,id,data) {
 
 		/* create the block div */
 		var group = document.createElement('div');
-		group.setAttribute('class','bengine-block bengine-block' + g_bengine.main);
-		group.setAttribute('id','bengine' + g_bengine.main + i);
+		group.setAttribute('class','bengine-block bengine-block' + _private.main);
+		group.setAttribute('id','bengine' + _private.main + i);
 
-		if(options.enableSingleView && i !== 1) {
+		if(_public.options.enableSingleView && i !== 1) {
 			group.setAttribute('style','display:none;visibility:hidden;');
 		}
 
@@ -418,14 +574,14 @@ this.blockContentShow = function(main,id,data) {
 			direction = 1;
 		}
 
-		var viewDiv = document.getElementById('bengine-currentBlock' + g_bengine.main);
+		var viewDiv = document.getElementById('bengine-currentBlock' + _private.main);
 		var viewStatus = Number(viewDiv.getAttribute('data-currentBlock'));
 
 		var next = viewStatus + direction;
 
-		var nextBlock = document.getElementById('bengine' + g_bengine.main + next);
+		var nextBlock = document.getElementById('bengine' + _private.main + next);
 		if(nextBlock !== null) {
-			var currentBlock = document.getElementById('bengine' + g_bengine.main + viewStatus);
+			var currentBlock = document.getElementById('bengine' + _private.main + viewStatus);
 			currentBlock.setAttribute('style','display:none;visibility:hidden;');
 
 			nextBlock.setAttribute('style','display:block;visibility:visible;');
@@ -434,9 +590,9 @@ this.blockContentShow = function(main,id,data) {
 		}
 	}
 
-	if(options.enableSingleView) {
+	if(_public.options.enableSingleView) {
 		var singleViewBtnsDiv = document.createElement('div');
-		singleViewBtnsDiv.setAttribute('id','bengine-single-view' + g_bengine.main);
+		singleViewBtnsDiv.setAttribute('id','bengine-single-view' + _private.main);
 		singleViewBtnsDiv.setAttribute('class','bengine-single-view');
 
 		var btnBack = document.createElement('button');
@@ -456,7 +612,7 @@ this.blockContentShow = function(main,id,data) {
 		};
 
 		var currentSingle = document.createElement('div');
-		currentSingle.setAttribute('id','bengine-currentBlock' + g_bengine.main);
+		currentSingle.setAttribute('id','bengine-currentBlock' + _private.main);
 		currentSingle.setAttribute('data-currentBlock',1);
 		currentSingle.setAttribute('style','display:none;visibility:hidden;');
 
@@ -484,9 +640,9 @@ this.blockContentShow = function(main,id,data) {
 
 		success - number, block count
 */
-var blockEngineStart = function(main,id,data) {
+this.blockEngineStart = function(main,id,data) {
 	/* set object global, used to separate one engine from another */
-	g_bengine.main = "-" + main + "-";
+	_private.main = "-" + main + "-";
 
 	/* main div */
 	var mainDiv = document.getElementById(main);
@@ -499,25 +655,25 @@ var blockEngineStart = function(main,id,data) {
 	var enginediv;
 	enginediv = document.createElement('div');
 	enginediv.setAttribute('class','bengine-instance');
-	enginediv.setAttribute('id','bengine-instance' + g_bengine.main);
+	enginediv.setAttribute('id','bengine-instance' + _private.main);
 	mainDiv.appendChild(enginediv);
 
 	/* blocks */
 	var blocksdiv = document.createElement('div');
 	blocksdiv.setAttribute('class','bengine-x-blocks');
-	blocksdiv.setAttribute('id','bengine-x-blocks' + g_bengine.main);
+	blocksdiv.setAttribute('id','bengine-x-blocks' + _private.main);
 
 	/* append blocks div to engine div */
 	enginediv.appendChild(blocksdiv);
 
 	/* append block styles */
-	blockStyle();
+	_private.blockStyle();
 	
 	/* append block dependencies */
-	blockScripts();
+	_private.blockScripts();
 
 	/* initial first block buttons, get count for style requirement below */
-	var buttons = blockButtons(0);
+	var buttons = _private.blockButtons(0);
 	var buttonCount = buttons.childNodes.length;
 	blocksdiv.appendChild(buttons);
 
@@ -534,11 +690,12 @@ var blockEngineStart = function(main,id,data) {
 
 	while(count < doubleBlockCount) {
 		/* create the block */
-		var block = generateBlock(i,data[count]);
-		var retblock = extensibles[data[count]].insertContent(block,data[count + 1]);
+		var block = _private.generateBlock(i,data[count]);		
+		var retblock = _private.extensibles[data[count]].insertContent(block,data[count + 1]);
+		retblock = _private.addRunBtn(i,_private.extensibles[data[count]],retblock);
 
 		/* create the block buttons */
-		buttons = blockButtons(i);
+		buttons = _private.blockButtons(i);
 
 		/* hide the last delete button */
 		if(count === doubleBlockCount - 2) {
@@ -550,8 +707,8 @@ var blockEngineStart = function(main,id,data) {
 
 		/* create block + button div */
 		var group = document.createElement('div');
-		group.setAttribute('class','bengine-block bengine-block' + g_bengine.main);
-		group.setAttribute('id','bengine' + g_bengine.main + i);
+		group.setAttribute('class','bengine-block bengine-block' + _private.main);
+		group.setAttribute('id','bengine' + _private.main + i);
 
 		group.appendChild(retblock);
 		group.appendChild(buttons);
@@ -560,7 +717,7 @@ var blockEngineStart = function(main,id,data) {
 		blocksdiv.appendChild(group);
 
 		/* do any rendering the block needs */
-		extensibles[data[count]].afterDOMinsert('bengine-a' + g_bengine.main + i,null);
+		_private.extensibles[data[count]].afterDOMinsert('bengine-a' + _private.main + i,null);
 
 		count += 2;
 		i++;
@@ -571,13 +728,13 @@ var blockEngineStart = function(main,id,data) {
 	/* hidden form for media uploads */
 	var fileinput = document.createElement('input');
 	fileinput.setAttribute('type','file');
-	fileinput.setAttribute('id','bengine-file-select' + g_bengine.main);
+	fileinput.setAttribute('id','bengine-file-select' + _private.main);
 
 	var filebtn = document.createElement('button');
 	filebtn.setAttribute('type','submit');
 	filebtn.setAttribute('id','upload-button');
 
-	var url = createURL("/uploadmedia");
+	var url = _private.createURL("/uploadmedia");
 
 	var fileform = document.createElement('form');
 	fileform.setAttribute('id','file-form');
@@ -595,7 +752,7 @@ var blockEngineStart = function(main,id,data) {
 
 	/* add page id & name to hidden div */
 	var idDiv = document.createElement("input");
-	idDiv.setAttribute("id","bengine-x-id" + g_bengine.main);
+	idDiv.setAttribute("id","bengine-x-id" + _private.main);
 	idDiv.setAttribute("name",id[0]);
 	idDiv.setAttribute("data-xid",id[1]);
 	idDiv.setAttribute("data-did",id[2]);
@@ -609,7 +766,7 @@ var blockEngineStart = function(main,id,data) {
 	/* it is checked when exiting a window to notify the user that the page hasn't been saved */
 	var statusid = document.createElement('input');
 	statusid.setAttribute('type','hidden');
-	statusid.setAttribute('id','bengine-statusid' + g_bengine.main);
+	statusid.setAttribute('id','bengine-statusid' + _private.main);
 	statusid.setAttribute('value','1');
 	enginediv.appendChild(statusid);
 
@@ -621,10 +778,6 @@ var blockEngineStart = function(main,id,data) {
 	enginediv.appendChild(mainid);
 
 	return i;
-};
-
-this.blockEngineStart = function(main,id,data) {
-	blockEngineStart(main,id,data);
 };
 
 // <<<fold>>>
@@ -649,7 +802,7 @@ this.blockEngineStart = function(main,id,data) {
 
 		success - number, block count
 */
-var countBlocks = function() {
+_private.countBlocks = function() {
 
 	/* block IDs are just numbers, so count the number of IDs */
 	var num = 0;
@@ -658,7 +811,7 @@ var countBlocks = function() {
 		num++;
 
 		/* undefined is double banged to false, and node is double banged to true */
-		miss = Boolean(document.getElementById('bengine' + g_bengine.main + num));
+		miss = Boolean(document.getElementById('bengine' + _private.main + num));
 	}
 
 	/* decrement num, since the check for id happens after increment */
@@ -679,13 +832,13 @@ var countBlocks = function() {
 
 		success - html node, block
 */
-var generateBlock = function(bid,btype) {
+_private.generateBlock = function(bid,btype) {
 	var block = document.createElement('div');
-	if(!options.enableSingleView && btype !== 'title') {
+	if(!_public.options.enableSingleView && btype !== 'title') {
 		block.setAttribute('style','margin-bottom:26px;');
 	}
 	block.setAttribute('data-btype',btype);
-	block.setAttribute('id','bengine-a' + g_bengine.main + bid);
+	block.setAttribute('id','bengine-a' + _private.main + bid);
 
 	return block;
 };
@@ -703,13 +856,13 @@ var generateBlock = function(bid,btype) {
 
 		none
 */
-var blockStyle = function() {
-	for(var prop in extensibles)(function(prop) {
-		if(extensibles.hasOwnProperty(prop)) {
+_private.blockStyle = function() {
+	for(var prop in _private.extensibles)(function(prop) {
+		if(_private.extensibles.hasOwnProperty(prop)) {
 			/* attach the blocks styline */
 			var style = document.createElement('style');
 			style.type = 'text/css';
-			style.innerHTML = extensibles[prop].styleBlock();
+			style.innerHTML = _private.extensibles[prop].styleBlock();
 			document.getElementsByTagName('head')[0].appendChild(style);
 		}
 	})(prop);
@@ -728,7 +881,7 @@ var blockStyle = function() {
 
 		none
 */
-var blockScripts = function() {
+_private.blockScripts = function() {
 	/* 
 		function that fetches all scripts, synchronously 
 		
@@ -766,9 +919,9 @@ var blockScripts = function() {
 	}
 	
 	/* get script data for each extensibles */
-	for(var prop in extensibles)(function(prop) {
-		if(extensibles.hasOwnProperty(prop)) {
-			var scriptArray = extensibles[prop].fetchDependencies();
+	for(var prop in _private.extensibles)(function(prop) {
+		if(_private.extensibles.hasOwnProperty(prop)) {
+			var scriptArray = _private.extensibles[prop].fetchDependencies();
 			if(scriptArray !== null) {
 				fetchScript([],scriptArray,0,'',0);
 			}
@@ -789,29 +942,29 @@ var blockScripts = function() {
 
 		success - html node, button div
 */
-var blockButtons = function(bid) {
+_private.blockButtons = function(bid) {
 
 	/* this div will hold the buttons inside of it */
 	var buttonDiv = document.createElement('div');
 	buttonDiv.setAttribute('class','row');
-	buttonDiv.setAttribute('id','bengine-b' + g_bengine.main + bid);
+	buttonDiv.setAttribute('id','bengine-b' + _private.main + bid);
 
 	var catDiv = document.createElement("div");
-	catDiv.setAttribute("id","bengine-cat" + g_bengine.main + bid);
+	catDiv.setAttribute("id","bengine-cat" + _private.main + bid);
 	catDiv.setAttribute("class","bengine-blockbtns row");
 	buttonDiv.appendChild(catDiv);
 
-	var categoryArray = ["code","design","math","media","text","quiz"];
+	var categoryArray = ["code","media","text","qengine"];
 	
 	categoryArray.forEach(function(element) {
 		var colDiv = document.createElement('div');
-		colDiv.setAttribute('class','col col-1_7');
+		colDiv.setAttribute('class','col col-1_5');
 		
 		/* create category button */
 		var btn = document.createElement('button');
 		btn.onclick = function() {
 			catDiv.setAttribute("style","display:none;visibility:hidden");
-			var row = document.getElementById("bengine" + g_bengine.main + element + "-" + bid);
+			var row = document.getElementById("bengine" + _private.main + element + "-" + bid);
 			row.setAttribute("style","display:block;visibility:visible;");
 		};
 		btn.setAttribute("class","bengine-blockbtn bengine-addbtn");
@@ -819,19 +972,19 @@ var blockButtons = function(bid) {
 		
 		/* create div for block buttons in category */
 		var subRow = document.createElement("div");
-		subRow.setAttribute("id","bengine" + g_bengine.main + element + "-" + bid);
+		subRow.setAttribute("id","bengine" + _private.main + element + "-" + bid);
 		subRow.setAttribute("class","bengine-blockbtns row");
 		subRow.setAttribute("style","display:none;visibility:hidden;");
 		buttonDiv.appendChild(subRow);
 		
 		/* create back button to categories */
 		var colBackDiv = document.createElement('div');
-		colBackDiv.setAttribute('class','col col-1_' + (options.categoryCounts[element] + 1));
+		colBackDiv.setAttribute('class','col col-1_' + (_private.categoryCounts[element] + 1));
 		
 		var btnBack = document.createElement('button');
 		btnBack.onclick = function() {
 			catDiv.setAttribute("style","display:block;visibility:visible");
-			var row = document.getElementById("bengine" + g_bengine.main + element + "-" + bid);
+			var row = document.getElementById("bengine" + _private.main + element + "-" + bid);
 			row.setAttribute("style","display:none;visibility:hidden;");
 		};
 		btnBack.setAttribute("class","bengine-blockbtn bengine-addbtn");
@@ -846,13 +999,13 @@ var blockButtons = function(bid) {
 	});
 	
 	var delDiv = document.createElement('div');
-	delDiv.setAttribute('class','col col-1_7');
+	delDiv.setAttribute('class','col col-1_5');
 
 	var delBtn = document.createElement('button');
-	delBtn.setAttribute('id','bengine-d' + g_bengine.main + bid);
+	delBtn.setAttribute('id','bengine-d' + _private.main + bid);
 	delBtn.setAttribute("class","bengine-blockbtn bengine-delbtn");
 	delBtn.onclick = function() {
-		deleteBlock(bid);
+		_private.deleteBlock(bid);
 	};
 	delBtn.style.visibility = 'hidden';
 	delBtn.innerHTML = "&darr;";
@@ -861,22 +1014,22 @@ var blockButtons = function(bid) {
 	catDiv.appendChild(delDiv);
 	
 	/* add block buttons to each category */
-	for(var prop in extensibles)(function(prop) {
-		if(extensibles.hasOwnProperty(prop)) {
+	for(var prop in _private.extensibles)(function(prop) {
+		if(_private.extensibles.hasOwnProperty(prop)) {
 			var btn = document.createElement('button');
 			btn.onclick = function() {
-				addBlock(bid,extensibles[prop].type);
+				_private.addBlock(bid,_private.extensibles[prop].type);
 				catDiv.setAttribute("style","display:block;visibility:visible");
-				var row = document.getElementById("bengine" + g_bengine.main + extensibles[prop].category + "-" + bid);
+				var row = document.getElementById("bengine" + _private.main + _private.extensibles[prop].category + "-" + bid);
 				row.setAttribute("style","display:none;visibility:hidden;");
 			};
 			btn.setAttribute("class","bengine-blockbtn bengine-addbtn");
-			btn.innerHTML = extensibles[prop].name;
+			btn.innerHTML = _private.extensibles[prop].name;
 
-			var subRow = buttonDiv.childNodes[categoryArray.indexOf(extensibles[prop].category) + 1];
+			var subRow = buttonDiv.childNodes[categoryArray.indexOf(_private.extensibles[prop].category) + 1];
 			
 			var colDiv = document.createElement('div');
-			colDiv.setAttribute('class','col col-1_' + (options.categoryCounts[extensibles[prop].category] + 1));
+			colDiv.setAttribute('class','col col-1_' + (_private.categoryCounts[_private.extensibles[prop].category] + 1));
 
 			colDiv.appendChild(btn);
 			subRow.appendChild(colDiv);
@@ -885,6 +1038,75 @@ var blockButtons = function(bid) {
 
 	return buttonDiv;
 };
+
+/*
+	Function: runCodeBlock
+	
+	This function sends block content to be run on a back-end service
+	
+	Parameters:
+	
+		bid - the block id
+		type - the type of block
+		getCode - a function that can retrieve the block code,namespace,vars by bid
+*/
+_private.runCodeBlock = function(bid,type,getCode) {
+	// data should have: 'code', 'vars', 'namespace'
+	var data = getCode(bid);
+	
+	data['type'] = type;
+	
+	var url = _private.createURL("/code");
+
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.open("POST",url,true);
+	xmlhttp.setRequestHeader("Content-type","application/json");
+
+	xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+			if(xmlhttp.status === 200) {
+				var result = JSON.parse(xmlhttp.responseText);
+
+				switch(result.msg) {
+					case 'blockrun':
+						// result.data ->
+						//		_public.resources[data['namespace'] = result.data.resources
+						//		_public.variables[data['namespace'] = result.data.variables
+						break;
+					case 'err':
+						alertify.alert(result.data.error);
+						break;
+					default:
+						alertify.alert("An Unknown Save Error Occurred");
+				}
+			}
+		}
+	}
+	
+	xmlhttp.send(JSON.stringify(data));
+}
+
+/*
+	Function: addRunBtn
+	
+	This function adds a button to code blocks for sending code to the backend to be run
+	
+	Parameters:
+	
+		bid - the block id
+		type - the type of block
+		block - the block
+*/
+_private.addRunBtn = function(bid,ext,block) {	
+	if(ext.category === "code") {
+		var runBtn = document.createElement('button');
+		runBtn.innerHTML = 'Run Code';
+		runBtn.onclick = _private.runCodeBlock.bind(null,'bengine-a' + _private.main + bid,ext.type,ext.saveContent);
+		block.appendChild(runBtn);
+	}
+	
+	return block;
+}
 
 /*
 	Function: makeSpace
@@ -900,21 +1122,21 @@ var blockButtons = function(bid) {
 
 		none
 */
-var makeSpace = function(bid,count) {
+_private.makeSpace = function(bid,count) {
 	var track = count;
 	while(bid < track) {
 		/* change blocks to this value */
 		var next = track + 1;
 
 		/* replace the button IDs */
-		var buttons = blockButtons(next);
-		document.getElementById('bengine-b' + g_bengine.main + track).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + g_bengine.main + track));
+		var buttons = _private.blockButtons(next);
+		document.getElementById('bengine-b' + _private.main + track).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + _private.main + track));
 
 		/* replace the content block id */
-		document.getElementById('bengine-a' + g_bengine.main + track).setAttribute('id','bengine-a' + g_bengine.main + next);
+		document.getElementById('bengine-a' + _private.main + track).setAttribute('id','bengine-a' + _private.main + next);
 
 		/* replace the block id */
-		document.getElementById('bengine' + g_bengine.main + track).setAttribute('id','bengine' + g_bengine.main + next);
+		document.getElementById('bengine' + _private.main + track).setAttribute('id','bengine' + _private.main + next);
 
 		/* update the count */
 		track--;
@@ -937,15 +1159,15 @@ var makeSpace = function(bid,count) {
 
 		none
 */
-var insertBlock = function(block,buttons,bid,count) {
+_private.insertBlock = function(block,buttons,bid,count) {
 
 	/* grab the blocks container */
-	var blocksdiv = document.getElementById('bengine-x-blocks' + g_bengine.main);
+	var blocksdiv = document.getElementById('bengine-x-blocks' + _private.main);
 
 	/* create the block div */
 	var group = document.createElement('div');
-	group.setAttribute('class','bengine-block bengine-block' + g_bengine.main);
-	group.setAttribute('id','bengine' + g_bengine.main + bid);
+	group.setAttribute('class','bengine-block bengine-block' + _private.main);
+	group.setAttribute('id','bengine' + _private.main + bid);
 
 	/* append the content block & buttons div to the block div */
 	group.appendChild(block);
@@ -975,30 +1197,30 @@ var insertBlock = function(block,buttons,bid,count) {
 
 		none
 */
-var createBlock = function(cbid,blockObj) {
+_private.createBlock = function(cbid,blockObj) {
 
-	var blockCount = countBlocks();
+	var blockCount = _private.countBlocks();
 
 	/* make space if inserting block, if appending block, ignore */
 	if(cbid < blockCount) {
-		makeSpace(cbid,blockCount);
+		_private.makeSpace(cbid,blockCount);
 	}
 
 	/* create and insert block */
 	var bid = cbid + 1;
 
-	var content = "";
-
-	var block = generateBlock(bid,blockObj.type);
-	var retblock = blockObj.insertContent(block,content);
-	var blockbuttons = blockButtons(bid);
-	insertBlock(retblock,blockbuttons,bid,blockCount);
-	blockObj.afterDOMinsert('bengine-a' + g_bengine.main + bid,null);
+	var block = _private.generateBlock(bid,blockObj.type);
+	var retblock = blockObj.insertContent(block,{});
+	retblock = _private.addRunBtn(bid,blockObj,retblock);
+		
+	var blockbuttons = _private.blockButtons(bid);
+	_private.insertBlock(retblock,blockbuttons,bid,blockCount);
+	blockObj.afterDOMinsert('bengine-a' + _private.main + bid,null);
 
 	/* make delete buttons visible */
 	var i = 0;
 	while(i <= blockCount) {
-		document.getElementById('bengine-d' + g_bengine.main + i).style.visibility = 'visible';
+		document.getElementById('bengine-d' + _private.main + i).style.visibility = 'visible';
 		i++;
 	}
 };
@@ -1017,21 +1239,21 @@ var createBlock = function(cbid,blockObj) {
 
 		none
 */
-var addBlock = function(bid,blockTypeName) {
-	if(options.blockLimit < (document.getElementsByClassName("bengine-block" + g_bengine.main).length + 1)) {
+_private.addBlock = function(bid,blockTypeName) {
+	if(_public.options.blockLimit < (document.getElementsByClassName("bengine-block" + _private.main).length + 1)) {
 		alertify.alert("You Have Reached The Block Limit");
 		return;
 	}
 
-	var blockObj = extensibles[blockTypeName];
+	var blockObj = _private.extensibles[blockTypeName];
 
 	/* media blocks only allowed in-house, all other block (text-based) route to regular process */
 	if (blockObj.upload) {
 		/* these blocks call uploadMedia() which uploads media and then calls createBlock() */
-		uploadMedia(bid + 1,blockObj);
+		_private.uploadMedia(bid + 1,blockObj);
 	} else {
 		/* these blocks call createBlock() to add the block */
-		createBlock(bid,blockObj);
+		_private.createBlock(bid,blockObj);
 		/* save blocks to temp table, indicated by false */
 		saveBlocks(false);
 	}
@@ -1051,21 +1273,21 @@ var addBlock = function(bid,blockTypeName) {
 
 		none
 */
-var closeSpace = function(cbid,count) {
+_private.closeSpace = function(cbid,count) {
 	var bid = cbid;
 	while(bid < count) {
 		/* change blocks to this value */
 		var next = bid + 1;
 
 		/* replace the button IDs */
-		var buttons = blockButtons(bid);
-		document.getElementById('bengine-b' + g_bengine.main + next).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + g_bengine.main + next));
+		var buttons = _private.blockButtons(bid);
+		document.getElementById('bengine-b' + _private.main + next).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + _private.main + next));
 
 		/* replace the content block id */
-		document.getElementById('bengine-a' + g_bengine.main + next).setAttribute('id','bengine-a' + g_bengine.main + bid);
+		document.getElementById('bengine-a' + _private.main + next).setAttribute('id','bengine-a' + _private.main + bid);
 
 		/* replace the block id */
-		document.getElementById('bengine' + g_bengine.main + next).setAttribute('id','bengine' + g_bengine.main + bid);
+		document.getElementById('bengine' + _private.main + next).setAttribute('id','bengine' + _private.main + bid);
 
 		/* update the bid */
 		bid++;
@@ -1085,8 +1307,8 @@ var closeSpace = function(cbid,count) {
 
 		nothing - *
 */
-var removeBlock = function(bid) {
-	var element = document.getElementById('bengine' + g_bengine.main + bid);
+_private.removeBlock = function(bid) {
+	var element = document.getElementById('bengine' + _private.main + bid);
 	element.parentNode.removeChild(element);
 };
 
@@ -1103,27 +1325,27 @@ var removeBlock = function(bid) {
 
 		nothing - *
 */
-var deleteBlock = function(cbid) {
-	var blockCount = countBlocks();
+_private.deleteBlock = function(cbid) {
+	var blockCount = _private.countBlocks();
 
 	var bid = cbid + 1;
 
 	/* delete the block */
-	removeBlock(bid);
+	_private.removeBlock(bid);
 
 	/* close space if removing block from middle, otherwise ignore */
 	if(bid < blockCount) {
-		closeSpace(bid,blockCount);
+		_private.closeSpace(bid,blockCount);
 	}
 
 	/* make delete buttons visible & last button invisible */
 	var i = 0;
-	blockCount = countBlocks();
+	blockCount = _private.countBlocks();
 	while(i < blockCount) {
-		document.getElementById('bengine-d' + g_bengine.main + i).style.visibility = 'visible';
+		document.getElementById('bengine-d' + _private.main + i).style.visibility = 'visible';
 		i++;
 	}
-	document.getElementById('bengine-d' + g_bengine.main + i).style.visibility = 'hidden';
+	document.getElementById('bengine-d' + _private.main + i).style.visibility = 'hidden';
 
 	/* save blocks to temp table, indicated by false */
 	saveBlocks(false);
@@ -1153,14 +1375,14 @@ var deleteBlock = function(cbid) {
 */
 this.revertBlocks = function() {
 	/* create the url destination for the ajax request */
-	var url = createURL("/revertblocks");
+	var url = _private.createURL("/revertblocks");
 
 	/* get the pid & page name */
-	var xid = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('data-xid');
-	var xidName = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('name');
+	var xid = document.getElementById('bengine-x-id' + _private.main).getAttribute('data-xid');
+	var xidName = document.getElementById('bengine-x-id' + _private.main).getAttribute('name');
 
 	/* get the did for restarting the bengine instance */
-	var did = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('data-did');
+	var did = document.getElementById('bengine-x-id' + _private.main).getAttribute('data-did');
 
 	var xmlhttp;
 	xmlhttp = new XMLHttpRequest();
@@ -1178,7 +1400,7 @@ this.revertBlocks = function() {
 
 				switch(result.msg) {
 					case 'success':
-						var oldBengine = document.getElementById('bengine-instance' + g_bengine.main);
+						var oldBengine = document.getElementById('bengine-instance' + _private.main);
 						var main = oldBengine.parentNode;
 						main.removeChild(oldBengine);
 						if(result.data === "") {
@@ -1186,7 +1408,7 @@ this.revertBlocks = function() {
 						} else {
 							blockEngineStart(main.getAttribute('id'),[xidName,xid,did],result.data.split(","));
 						}
-						document.getElementById("bengine-savestatus" + g_bengine.main).innerHTML = "Saved";
+						document.getElementById("bengine-savestatus" + _private.main).innerHTML = "Saved";
 						break;
 					case 'noxid':
 						alertify.alert("This Page Is Not Meant To Be Visited Directly."); break;
@@ -1218,7 +1440,7 @@ this.revertBlocks = function() {
 
 		nothing - *
 */
-if(options.enableSave === false) {
+if(_public.options.enableSave === false) {
 	saveBlocks = function(which) { /* do nothing */ };
 } else {
 var saveBlocks = function(which) {
@@ -1227,46 +1449,50 @@ var saveBlocks = function(which) {
 	var table;
 	if(which === false) {
 		table = 0;
-		document.getElementById("bengine-savestatus" + g_bengine.main).innerHTML = "Not Saved";
+		let statusbar = document.getElementById("bengine-savestatus" + _private.main);
+		if(statusbar !== null) {
+			statusbar.innerHTML = "Not Saved";
+		}
 	} else {
 		table = 1;
 	}
 
-	document.getElementById('bengine-statusid' + g_bengine.main).setAttribute('value',table);
+	document.getElementById('bengine-statusid' + _private.main).setAttribute('value',table);
 
 	/* variables for storing block data */
 	var blockType = [];
 	var blockContent = [];
 
-	var blockCount = countBlocks();
+	var blockCount = _private.countBlocks();
 	var bid = 1;
 
 	/* get the block types & contents */
+	var contentToSave = {};
 	if(blockCount > 0) {
 		var i = 0;
 		while(blockCount >= bid) {
 			/* get the block type */
-			var btype = document.getElementById('bengine-a' + g_bengine.main + bid).getAttribute('data-btype');
+			var btype = document.getElementById('bengine-a' + _private.main + bid).getAttribute('data-btype');
 			blockType[i] = btype;
 
 			/* get the block content */
-			blockContent[i] = extensibles[btype].saveContent('bengine-a' + g_bengine.main + bid);
+			blockContent[i] = _private.extensibles[btype].saveContent('bengine-a' + _private.main + bid);
 
 			i++;
 			bid++;
 		}
 
 		/* merge mediaType & mediaContent arrays into default comma-separated strings */
-		var types = blockType.join("@^@");
-		var contents = blockContent.join("@^@");
+		contentToSave['types'] = blockType;
+		contentToSave['content'] = blockContent;
 	}
 
 	/* create the url destination for the ajax request */
-	var url = createURL("/saveblocks");
+	var url = _private.createURL("/save");
 
 	/* get the pid & page name */
-	var xid = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('data-xid');
-	var xidName = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('name');
+	var xid = document.getElementById('bengine-x-id' + _private.main).getAttribute('data-xid');
+	var xidName = document.getElementById('bengine-x-id' + _private.main).getAttribute('name');
 
 	var xmlhttp;
 	xmlhttp = new XMLHttpRequest();
@@ -1275,22 +1501,26 @@ var saveBlocks = function(which) {
 	if(which !== false) {
 		xmlhttp.upload.onprogress = function(e) {
 			if (e.lengthComputable) {
-				progressUpdate(e.loaded);
+				_private.progressUpdate(e.loaded);
 			}
 		};
 		xmlhttp.upload.onloadstart = function(e) {
-			progressInitialize("Saving...",e.total);
+			_private.progressInitialize("Saving...",e.total);
 		};
 		xmlhttp.upload.onloadend = function(e) {
-			progressFinalize("Saved",e.total);
+			_private.progressFinalize("Saved",e.total);
 		};
 	}
 
-	var params = "mediaType=" + types + "&mediaContent=" + contents + "&xid=" + xid + "&pagetype=" + xidName + "&tabid=" + table;
+	contentToSave['xid'] = xid;
+	contentToSave['pagetype'] = xidName;
+	contentToSave['tabid'] = table;
+
+	var params = JSON.stringify(contentToSave);
 
 	xmlhttp.open("POST",url,true);
 
-	xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+	xmlhttp.setRequestHeader("Content-type","application/json");
 
 	xmlhttp.onreadystatechange = function() {
         if (xmlhttp.readyState === XMLHttpRequest.DONE) {
@@ -1300,7 +1530,10 @@ var saveBlocks = function(which) {
 				switch(result.msg) {
 					case 'blocksaved':
 						if(table === 1) {
-							document.getElementById("bengine-savestatus" + g_bengine.main).innerHTML = "Saved";
+							let statusbar = document.getElementById("bengine-savestatus" + _private.main);
+							if(statusbar !== null) {
+								statusbar.innerHTML = "Saved";
+							}
 						}
 						break;
 					case 'nosaveloggedout':
@@ -1338,30 +1571,15 @@ this.saveBlocks = function(which) {
 
 		none
 */
-var uploadMedia = function(bid,blockObj) {
+_private.uploadMedia = function(bid,blockObj) {
 
 	/* get the hidden file-select object that will store the user's file selection */
-	var fileSelect = document.getElementById('bengine-file-select' + g_bengine.main);
-
-	/* change file-select to only accept files based on btype */
-	switch(blockObj.type) {
-		case "image":
-			fileSelect.setAttribute("accept",".bmp,.bmp2,.bmp3,.jpeg,.jpg,.pdf,.png,.svg");
-			break;
-		case "audio":
-			fileSelect.setAttribute("accept",".aac,.aiff,.m4a,.mp3,.ogg,.ra,.wav,.wma");
-			break;
-		case "video":
-			fileSelect.setAttribute("accept",".avi,.flv,.mov,.mp4,.mpeg,.ogg,.rm,.webm,.wmv");
-			break;
-		case "xsvgs":
-			fileSelect.setAttribute("accept",".svg");
-			break;
-		case "slide":
-			fileSelect.setAttribute("accept",".pdf,.ppt,.pptx,.pps,.ppsx");
-			break;
-		default:
-			fileSelect.setAttribute("accept","");
+	var fileSelect = document.getElementById('bengine-file-select' + _private.main);
+	
+	if(blockObj.accept !== 'undefined' && typeof blockObj.accept === 'string') {
+		fileSelect.setAttribute("accept", blockObj.accept);
+	} else {
+		fileSelect.setAttribute("accept","");
 	}
 
 	/* uploadMedia() is called when a block button is pressed, to show file select pop-up box, force click the file-select object */
@@ -1378,9 +1596,9 @@ var uploadMedia = function(bid,blockObj) {
 		var nofile = false;
 		var errorMsg;
 		if(fileSelect.files.length > 0) {
-			if(file.size > (options.mediaLimit * 1048576)) {
+			if(file.size > (_public.options.mediaLimit * 1048576)) {
 				notvalid = true;
-				errorMsg = `Files Must Be Less Than ${options.mediaLimit} MB`;
+				errorMsg = `Files Must Be Less Than ${_public.options.mediaLimit} MB`;
 			}
 		} else {
 			nofile = true;
@@ -1416,7 +1634,7 @@ var uploadMedia = function(bid,blockObj) {
 			/* this gets called below where length check occurs */
 			function uploadProcess() {
 				/* create the block to host the media */
-				createBlock(bid - 1,blockObj);
+				_private.createBlock(bid - 1,blockObj);
 
 				/* wrap the ajax request in a promise */
 				var promise = new Promise(function(resolve,reject) {
@@ -1426,25 +1644,25 @@ var uploadMedia = function(bid,blockObj) {
 					formData.append('media',file,file.name);
 
 					/* get the directory id */
-					var did = document.getElementById('bengine-x-id' + g_bengine.main).getAttribute('data-did');
+					var did = document.getElementById('bengine-x-id' + _private.main).getAttribute('data-did');
 
 					/* grab the domain and create the url destination for the ajax request */
-					var url = createURL("/uploadmedia?did=" + did + "&btype=" + blockObj.type);
+					var url = _private.createURL("/uploadmedia?did=" + did + "&btype=" + blockObj.type);
 
 					var xmlhttp = new XMLHttpRequest();
 					xmlhttp.open('POST',url,true);
 
 					/* upload progress */
 					xmlhttp.upload.onloadstart = function(e) {
-						progressInitialize("Uploading...",e.total);
+						_private.progressInitialize("Uploading...",e.total);
 					};
 					xmlhttp.upload.onprogress = function(e) {
 						if (e.lengthComputable) {
-							progressUpdate(e.loaded);
+							_private.progressUpdate(e.loaded);
 						}
 					};
 					xmlhttp.upload.onloadend = function(e) {
-						progressFinalize("Uploaded",e.total);
+						_private.progressFinalize("Uploaded",e.total);
 					};
 
 					function counter(reset) {
@@ -1477,16 +1695,16 @@ var uploadMedia = function(bid,blockObj) {
 						var current = counter(false);
 						var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
 						if(current === 1) {
-							progressInitialize("Converting...",val[val.length - 1]);
+							_private.progressInitialize("Converting...",val[val.length - 1]);
 						} else {
-							progressUpdate(val[val.length - 1]);
+							_private.progressUpdate(val[val.length - 1]);
 						}
 					};
 
 					xmlhttp.onloadend = function(e) {
 						var spotArray = position(xmlhttp.responseText.length);
 						var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
-						progressFinalize("Not Saved",val[val.length - 1]);
+						_private.progressFinalize("Not Saved",val[val.length - 1]);
 						counter(true);
 					};
 
@@ -1500,7 +1718,7 @@ var uploadMedia = function(bid,blockObj) {
 								} else if(xmlhttp.responseText === "nopatherr") {
 									reject("nopatherr");
 								} else if (xmlhttp.responseText === "nouploadloggedout") {
-									deleteBlock(bid - 1);
+									_private.deleteBlock(bid - 1);
 									alertify.alert("You Can't Upload Media Because You Are Logged Out. Log Back In On A Separate Page, Then Return Here & Try Again.");
 									reject("err");
 								} else {
@@ -1521,7 +1739,7 @@ var uploadMedia = function(bid,blockObj) {
 				});
 
 				promise.then(function(data) {
-					blockObj.afterDOMinsert('bengine-a' + g_bengine.main + bid,data);
+					blockObj.afterDOMinsert('bengine-a' + _private.main + bid,data);
 
 					/* save blocks to temp table, indicated by false */
 					saveBlocks(false);
@@ -1538,16 +1756,16 @@ var uploadMedia = function(bid,blockObj) {
 
 			if(checklengthvideo) {
 				vidTempElement.ondurationchange = function() {
-					if(this.duration > options.playableMediaLimit) {
-						alertify.alert(`Videos Must Be Less Than ${options.playableMediaLimit} Seconds`);
+					if(this.duration > _public.options.playableMediaLimit) {
+						alertify.alert(`Videos Must Be Less Than ${_public.options.playableMediaLimit} Seconds`);
 					} else {
 						uploadProcess();
 					}
 				};
 			} else if(checklengthaudio) {
 				audTempElement.ondurationchange = function() {
-					if(this.duration > options.playableMediaLimit) {
-						alertify.alert(`Videos Must Be Less Than ${options.playableMediaLimit} Seconds`);
+					if(this.duration > _public.options.playableMediaLimit) {
+						alertify.alert(`Videos Must Be Less Than ${_public.options.playableMediaLimit} Seconds`);
 					} else {
 						uploadProcess();
 					}

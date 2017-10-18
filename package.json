@@ -5,11 +5,23 @@
   "main": "server.js",
   "dependencies": {
     "connect-busboy": "0.0.2",
-    "express": "^4.13.4"
+    "connect-redis": "^3.1.0",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.13.4",
+    "express-mysql-session": "^1.1.1",
+    "express-session": "^1.7.6",
+    "mongodb": "^2.2.16",
+    "mysql": "^2.10.2",
+    "react": "^15.6.1",
+    "react-dom": "^15.6.1",
+    "redis": "^2.6.3",
+    "request": "^2.72.0",
+    "scrypt": "^6.0.3",
+    "uglify-js": "git+https://github.com/mishoo/UglifyJS2.git#harmony"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/efossas/Bengine/"
+    "url": "https://github.com/academicsystems/Bengine/"
   },
   "devDependencies": {
     "chai": "^3.5.0",
@@ -17,7 +29,7 @@
     "mocha": "^3.2.0"
   },
   "scripts": {
-	"postinstall": "./postinstall.sh",
+    "postinstall": "./postinstall.sh",
     "test": "mocha"
   },
   "author": "Eric Fossas",

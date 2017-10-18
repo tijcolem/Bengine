@@ -6,27 +6,26 @@ BengineConfig.extensibles.xkcdi = new function Xkcdi() {
 
 	var xkcdObj = this;
 	
-	var parseBlock = function(blockText) {
-		return encodeURIComponent(blockText);
-	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText);
-	};
+	var emptyObject = function(obj) {
+		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
+			return true;
+		}
+		return false;
+	}
 	
 	this.fetchDependencies = function() {
 		return null;
 	}
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {
 		var xkcdDiv = document.createElement("div");
 		xkcdDiv.setAttribute("class","xKcd");
 		
 		var xkcdImg = document.createElement("img");
 		xkcdImg.setAttribute("class","xKcd-show");
 		
-		if(content) {
-			xkcdImg.src = xkcdObj.g.xkcdURL + deparseBlock(content);
+		if(!emptyObject(bcontent)) {
+			xkcdImg.src = xkcdObj.g.xkcdURL + bcontent['url'];
 		} else {
 			var nmbr = Math.floor(Math.random() * 1829);
 			xkcdImg.src = xkcdObj.g.xkcdURL + xkcdObj.g.availableXKCD[nmbr].url;
@@ -50,18 +49,18 @@ BengineConfig.extensibles.xkcdi = new function Xkcdi() {
 	this.saveContent = function(bid) {
 		/* get the relative path */
 		var imagestr = document.getElementById(bid).children[0].children[0].src.split("/");
-		return parseBlock(imagestr[imagestr.length - 1]);
+		return {'url':imagestr[imagestr.length - 1]};
 	};
 
-	this.showContent = function(block,content) {
+	this.showContent = function(block,bcontent) {
 		var xkcdDiv = document.createElement("div");
 		xkcdDiv.setAttribute("class","xKcd");
 		
 		var xkcdImg = document.createElement("img");
 		xkcdImg.setAttribute("class","xKcd-show");
 		
-		if(content) {
-			xkcdImg.src = xkcdObj.g.xkcdURL + deparseBlock(content);
+		if(!emptyObject(bcontent)) {
+			xkcdImg.src = xkcdObj.g.xkcdURL + bcontent['url'];
 		} else {
 			var nmbr = Math.floor(Math.random() * xkcdObj.g.xkcdCount);
 			xkcdImg.src = xkcdObj.g.xkcdURL + xkcdObj.g.availableXKCD[nmbr].url;
@@ -87,9 +86,9 @@ BengineConfig.extensibles.xkcdi = new function Xkcdi() {
 			display: inline-block;
 			width: auto;
 			height: auto;
+			max-width: 100%;
 			max-height: 500px;
 			border: 1px solid black;
-			border-radius: 2px;
 			
 			cursor: pointer;
 
