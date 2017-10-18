@@ -24,7 +24,7 @@
 	{
 		"http":2020,
 		"https":2021
-	}
+	},
 	"processes":1,
 	"services":
 	{

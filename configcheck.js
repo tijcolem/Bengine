@@ -117,7 +117,7 @@ module.exports = function(config) {
 		};
 	} else {
 		if(typeof config["port"]["http"] !== "number" && typeof config["port"]["https"] !== "number") {
-			return {"fatal":"Config error. Either ["port"]["http"] or ["port"]["https"] must be defined and must be a number"};
+			return {"fatal":"Config error. Either ['port']['http'] or ['port']['https'] must be defined and must be a number"};
 		}
 		var httpset = false;
 		var httpsset = false;
