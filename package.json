@@ -16,7 +16,6 @@
     "react-dom": "^15.6.1",
     "redis": "^2.6.3",
     "request": "^2.72.0",
-    "scrypt": "^6.0.3",
     "uglify-js": "git+https://github.com/mishoo/UglifyJS2.git#harmony"
   },
   "repository": {
