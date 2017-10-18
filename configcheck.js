@@ -111,14 +111,39 @@ module.exports = function(config) {
 	
 	/* check "port" */
 	if(!config.hasOwnProperty("port")) {
-		report.push("Missing/Invalid -> 'port' : Must be number, defaults to 2020.");
-		config["port"] = 2020;
-	} else if(config["port"] === null) {
-		config["port"] = 2020;
-	} else if (typeof config["port"] !== "number") {
-		return {"fatal":"Config error. 'port' must be a number or null (defaults to 2020)"};
-	} if (config["port"] > 65535 || config["port"] < 1024) {
-		return {"fatal":"Invalid port number. Port must be between 1024 & 65535"};
+		report.push("Missing/Invalid -> 'port' : Must be object. Defaults to HTTP and port 2020");
+		config["port"] = {
+			"http":2020
+		};
+	} else {
+		if(typeof config["port"]["http"] !== "number" && typeof config["port"]["https"] !== "number") {
+			return {"fatal":"Config error. Either ["port"]["http"] or ["port"]["https"] must be defined and must be a number"};
+		}
+		var httpset = false;
+		var httpsset = false;
+		if(typeof config["port"]["http"] === "number") {
+			if(config["port"]["http"] > 65535 || config["port"]["http"] < 1024) {
+				return {"fatal":"Invalid http port number. Port must be between 1024 & 65535"};
+			}
+			httpset = true;
+		}
+		if(typeof config["port"]["https"] === "number") {
+			if(config["port"]["https"] > 65535 || config["port"]["https"] < 1024) {
+				return {"fatal":"Invalid https port number. Port must be between 1024 & 65535"};
+			}
+			httpsset = true;
+		}
+		if(httpset && httpsset) {
+			if(config["port"]["http"] === config["port"]["https"]) {
+				return {"fatal":"Invalid ports. http and https ports cannot be the same"};
+			}
+		}
+		if (!httpset && config["port"]["http"] !== null) {
+			config['port']['http'] = null;
+		}
+		if (!httpsset && config["port"]["https"] !== null) {
+			config['port']['https'] = null;
+		}
 	}
 	
 	/* check "processes" */

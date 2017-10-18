@@ -4,6 +4,8 @@ module.exports = function(config) {
 
 	const busboy = require('connect-busboy');
 	const express = require('express');
+	const https = require('https');
+	const http = require('http');
 	const cookieParser = require('cookie-parser');
 	const routes = require('./routes.js');
 	
@@ -172,11 +174,28 @@ module.exports = function(config) {
 		response.status(404);
 		response.end("Page Not Found");
 	});
-		
-	app.listen(config["port"],function() {
-		console.log("bengine server listening at " + config["port"]);
-	});
 	
+	/* start http server */
+	if(config["port"]["http"]) {
+		http.createServer(app).listen(config["port"]["http"],function() {
+			console.log("bengine http server listening at " + config["port"]);
+		});
+	}
+	
+	if(config["port"]["https"]) {
+		/* get ssl certificates */
+		var privateKey = fs.readFileSync(__dirname + '/ssl/bengine.key');
+		var certificate = fs.readFileSync(__dirname + '/ssl/bengine.pem');
+		
+		/* start https server */
+		https.createServer({
+		    key: privateKey,
+		    cert: certificate
+		}, app).listen(config["port"]["https"],function() {
+			console.log("bengine https server listening at " + config["port"]);
+		});
+	}
+
 	process.on('SIGINT',function() {
 		// place any clean up here
 	    process.exit();
