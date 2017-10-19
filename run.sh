@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SCRIPTPATH=`pwd`
+SCRIPTPATH="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 LEVEL=$(cat $SCRIPTPATH/config.json | grep -E -o "\"level\":\s*\"(\w*)\"" | cut -d'"' -f4)
 
 if [ ${LEVEL:0:1} == "d" ]; then
