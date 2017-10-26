@@ -1,6 +1,8 @@
 #!/bin/sh
 
-LEVEL=$(cat ./config.json | grep -E -o "\"level\":\s*\"(\w*)\"" | cut -d'"' -f4)
+SCRIPT=`realpath $0`
+SCRIPTPATH=`dirname $SCRIPT`
+LEVEL=$(cat $SCRIPTPATH/config.json | grep -E -o "\"level\":\s*\"(\w*)\"" | cut -d'"' -f4)
 
 if [ ${LEVEL:0:1} == "d" ]; then
 	NODE_ENV=dev;
