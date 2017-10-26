@@ -1,7 +1,6 @@
 #!/bin/sh
 
-SCRIPTPATH="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
-LEVEL=$(cat $SCRIPTPATH/config.json | grep -E -o "\"level\":\s*\"(\w*)\"" | cut -d'"' -f4)
+LEVEL=$(cat ./config.json | grep -E -o "\"level\":\s*\"(\w*)\"" | cut -d'"' -f4)
 
 if [ ${LEVEL:0:1} == "d" ]; then
 	NODE_ENV=dev;
