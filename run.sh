@@ -15,6 +15,8 @@ else
 	exit 1;
 fi
 
+cd $SCRIPTPATH
+
 if [ $# == 1 ]; then
 	node main $1;
 else
