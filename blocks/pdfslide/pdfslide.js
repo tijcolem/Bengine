@@ -5,14 +5,47 @@ BengineConfig.extensibles.slide = new function Slide() {
 	this.upload = true;
 	this.accept = ".pdf,.ppt,.pptx,.pps,.ppsx";
 
-	var slideObj = this;
+	var thisBlock = this;
+	var _private = {};
 	
-	var emptyObject = function(obj) {
-		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
-			return true;
-		}
-		return false;
+	_private.pdfObjects = {};
+	
+	_private.renderPDF = function(pdfDoc,pageNum,canvas) {
+		/*
+			pdfDoc - pdf object from pdfObject global array
+			pageNum - pdf page to render, found in data-page attribute of <canvas>
+			canvas - the <canvas> tag to render pdf page to
+		*/
+
+		/// I have no idea what scale does, but it's needed
+		var scale = 0.8;
+
+		/* call pdfDoc object's getPage function to get desired page to render */
+		pdfDoc.getPage(pageNum).then(function(page) {
+
+			/* define <canvas> attributes */
+			var viewport = page.getViewport(scale);
+			canvas.height = viewport.height;
+			canvas.width = viewport.width;
+
+			/* define more <canvas> attributes for render() function */
+			var renderContext = {
+				canvasContext: canvas.getContext('2d'),
+				viewport: viewport
+			};
+
+			/* finally, render the pdf page to canvas */
+			var renderTask = page.render(renderContext);
+
+			renderTask.promise.then(function() {
+				/// update stuff here, page has been rendered
+			});
+		});
 	}
+	
+	this.destroy = function() {
+		return;
+	};
 	
 	this.fetchDependencies = function() {
 		var pdfjs = {
@@ -35,13 +68,13 @@ BengineConfig.extensibles.slide = new function Slide() {
 		block.appendChild(canvas);
 
 		/* if block was just made, don't try to load pdf */
-		if (!emptyObject(bcontent)) {
+		if (!thisBlock.p.emptyObject(bcontent)) {
 			PDFJS.getDocument(bcontent['url']).then(function(pdfObj) {
-				slideObj.g.pdfObjects[bcontent['url']] = pdfObj;
+				_private.pdfObjects[bcontent['url']] = pdfObj;
 
 				var tag = block.childNodes[0];
 
-				slideObj.f.renderPDF(pdfObj,1,tag);
+				_private.renderPDF(pdfObj,1,tag);
 			});
 		}
 
@@ -54,20 +87,20 @@ BengineConfig.extensibles.slide = new function Slide() {
 			var canvas = this.childNodes[0];
 			var pageNum = canvas.getAttribute("data-page");
 			var pdfID = canvas.getAttribute("id");
-			var pageCount = slideObj.g.pdfObjects[pdfID].numPages;
+			var pageCount = _private.pdfObjects[pdfID].numPages;
 
 			/* determine whether left or right side was clicked, then render prev or next page */
 			if(X > this.offsetWidth / 1.7) {
 				if(pageNum < pageCount) {
 					pageNum++;
 					canvas.setAttribute("data-page",pageNum);
-					slideObj.f.renderPDF(slideObj.g.pdfObjects[pdfID],pageNum,canvas);
+					_private.renderPDF(_private.pdfObjects[pdfID],pageNum,canvas);
 				}
 			} else {
 				if(pageNum > 1) {
 					pageNum--;
 					canvas.setAttribute("data-page",pageNum);
-					slideObj.f.renderPDF(slideObj.g.pdfObjects[pdfID],pageNum,canvas);
+					_private.renderPDF(_private.pdfObjects[pdfID],pageNum,canvas);
 				}
 			}
 		};
@@ -81,15 +114,17 @@ BengineConfig.extensibles.slide = new function Slide() {
 			/* add the pdf to the pdfObjects array and render the first page */
 			PDFJS.getDocument(deparseBlock(data)).then(function(pdfObj) {
 
-				slideObj.g.pdfObjects[data] = pdfObj;
+				_private.pdfObjects[data] = pdfObj;
 
 				var slidetag = document.getElementById(bid).childNodes[0];
 				slidetag.setAttribute("id",data);
 
-				objCopy.f.renderPDF(pdfObj,1,slidetag);
+				_private.renderPDF(pdfObj,1,slidetag);
 			});
 		}
 	};
+	
+	this.runBlock = null;
 
 	this.saveContent = function(bid) {
 		/* replace() is for escaping backslashes and making relative path */
@@ -109,11 +144,11 @@ BengineConfig.extensibles.slide = new function Slide() {
 		/* if block was just made, don't try to load pdf */
 		if (bcontent !== "") {
 			PDFJS.getDocument(content).then(function(pdfObj) {
-				slideObj.g.pdfObjects[content] = pdfObj;
+				_private.pdfObjects[content] = pdfObj;
 
 				var tag = block.childNodes[0];
 
-				slideObj.f.renderPDF(pdfObj,1,tag);
+				_private.renderPDF(pdfObj,1,tag);
 			});
 		}
 
@@ -126,20 +161,20 @@ BengineConfig.extensibles.slide = new function Slide() {
 			var canvas = this.childNodes[0];
 			var pageNum = canvas.getAttribute("data-page");
 			var pdfID = canvas.getAttribute("id");
-			var pageCount = slideObj.g.pdfObjects[pdfID].numPages;
+			var pageCount = _private.pdfObjects[pdfID].numPages;
 
 			/* determine whether left or right side was clicked, then render prev or next page */
 			if(X > this.offsetWidth / 1.7) {
 				if(pageNum < pageCount) {
 					pageNum++;
 					canvas.setAttribute("data-page",pageNum);
-					slideObj.f.renderPDF(slideObj.g.pdfObjects[pdfID],pageNum,canvas);
+					_private.renderPDF(_private.pdfObjects[pdfID],pageNum,canvas);
 				}
 			} else {
 				if(pageNum > 1) {
 					pageNum--;
 					canvas.setAttribute("data-page",pageNum);
-					slideObj.f.renderPDF(slideObj.g.pdfObjects[pdfID],pageNum,canvas);
+					_private.renderPDF(_private.pdfObjects[pdfID],pageNum,canvas);
 				}
 			}
 		};
@@ -160,44 +195,5 @@ BengineConfig.extensibles.slide = new function Slide() {
 			box-sizing: border-box;
 		}`;
 		return stylestr;
-	};
-
-	this.f = {
-		renderPDF: function(pdfDoc,pageNum,canvas) {
-			/*
-				pdfDoc - pdf object from pdfObject global array
-				pageNum - pdf page to render, found in data-page attribute of <canvas>
-				canvas - the <canvas> tag to render pdf page to
-			*/
-
-			/// I have no idea what scale does, but it's needed
-			var scale = 0.8;
-
-			/* call pdfDoc object's getPage function to get desired page to render */
-			pdfDoc.getPage(pageNum).then(function(page) {
-
-				/* define <canvas> attributes */
-				var viewport = page.getViewport(scale);
-				canvas.height = viewport.height;
-				canvas.width = viewport.width;
-
-				/* define more <canvas> attributes for render() function */
-				var renderContext = {
-					canvasContext: canvas.getContext('2d'),
-					viewport: viewport
-				};
-
-				/* finally, render the pdf page to canvas */
-				var renderTask = page.render(renderContext);
-
-				renderTask.promise.then(function() {
-					/// update stuff here, page has been rendered
-				});
-			});
-		}
-	};
-	
-	this.g = {
-		pdfObjects: {}
 	};
 };

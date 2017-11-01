@@ -1,4 +1,11 @@
 var playBlockStartCode = `function() {
+/*
+	Welcome!
+	
+	Press the 'Load Custom Block' button to load this block into Bengine.
+	Bengine will start below after you click the button.
+	Open the developer's console to view extra info.
+*/
 
 /**************************************
 type (string) - should match property name you add to extensibles, must be 5 letters or less
@@ -12,7 +19,20 @@ this.type = "tarea";
 this.name = "textarea";
 this.category = "text";
 this.upload = false;
-this.accept = "";
+this.accept = null;
+
+tareaObj = this; // it's helpful to keep a reference to this object
+
+/**************************************
+destroy(bid)
+this function is run when a user deletes the block
+
+bid - the block id, so you can getElementById
+***************************************/
+
+this.destroy = function(bid) {
+	// run any cleanup code for destroying your block
+};
 
 /**************************************
 fetchDependencies()
@@ -39,10 +59,11 @@ content - any content from the database
 this.insertContent = function(block,content) {
 	var xtarea = document.createElement("textarea");
 	xtarea.setAttribute("class","xTar");
-	xtarea.value = content;
 	
-	if(content === "") {
+	if(tareaObj.p.emptyObject(content)) {
 		xtarea.placeholder = "textarea text goes here...";
+	} else {
+		xtarea.value = content;
 	}
 
 	block.appendChild(xtarea);
@@ -60,6 +81,19 @@ data - this is always null, it might become something in later versions
 
 this.afterDOMinsert = function(bid,data) {
 	// this simple example requires no code after appending block to dom
+};
+
+/**************************************
+runBlock(bid)
+this function is run when the user click the 'Run Block' button
+
+bid - the block id, so you can getElementById
+***************************************/
+
+this.runBlock = function(bid) {
+	// a 'Run Block' button is added to every block. it meant for updating a preview div
+	// you can set this to 'null' to remove the button
+	alertify.log('nothing to do...','success');
 };
 
 /**************************************
@@ -138,13 +172,22 @@ this.styleBlock = function() {
 };
 
 /**************************************
-use this to attach functions you need during runtime.
-you can use them by calling this.f.myfunction in other parts of this extensible.
-you may have to use javascript's .bind() function when calling it.
+When Bengine loads this block, it will attach the following:
+
+this.d
+	- points to Bengine public methods and properties
+	- used for retrieving or setting data that is shared between blocks
+	- methods are all getters for data that cannot be set
+
+this.p
+	- points to methods that are commonly used in many blocks (reduces redundancy)
+
 ***************************************/
 
-this.f = {
-    // our simple example requires no runtime functions
+// 
+
+this.g = {
+	// our simple example requires no public attributes
 };
 
 }
@@ -181,5 +224,6 @@ function loadCustomBlock() {
     blockExtensibles[blockObject.type] = blockObject;
 
     var playEngine = new Bengine(blockExtensibles,blockCustomFunctions,blockOptions);
-    playEngine.blockEngineStart('content',['page',1,1],[]);
+    playEngine.blockEngineStart('content',['bank','pid','1.0'],[]);
+    console.log(playEngine);
 }

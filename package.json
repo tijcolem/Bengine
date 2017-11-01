@@ -10,6 +10,7 @@
     "express": "^4.13.4",
     "express-mysql-session": "^1.1.1",
     "express-session": "^1.7.6",
+    "mime": "^2.0.3",
     "mongodb": "^2.2.16",
     "mysql": "^2.10.2",
     "react": "^15.6.1",

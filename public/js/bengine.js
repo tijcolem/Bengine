@@ -155,11 +155,9 @@ function Bengine(extensibles,funcs,options) {
 
 var _public = {};
 _public.options = options;
-_public.resources = {};
-_public.variables = {'qengine':{}};;
+_public.variables = {'qengine':{}};
 
 this.options = _public.options;
-this.resources = _public.resources;
 this.variables = _public.variables;
 
 /***
@@ -170,7 +168,16 @@ this.variables = _public.variables;
 var _private = {};
 _private.categoryCounts = {};
 _private.extensibles = extensibles;
-_private.main = '';
+_private.engineID = '';
+_private.pageIDs = {
+	bank:'',
+	pid:'',
+	version:''
+}
+
+_public.getPageBank = function() { return _private.pageIDs.bank; }
+_public.getPagePid = function() { return _private.pageIDs.pid; }
+_public.getPageVersion = function() { return _private.pageIDs.version; }
 
 /***
 	Section: Configuration Options
@@ -178,6 +185,7 @@ _private.main = '';
 ***/
 
 _public.options.blockLimit = options.blockLimit || 8;
+_public.options.defaultText = (options.defaultText !== false);
 _public.options.enableSave = (options.enableSave !== false);
 _public.options.enableSingleView = options.enableSingleView || false;
 _public.options.loadStyles = (options.loadStyles !== false);
@@ -192,10 +200,9 @@ _public.options.swidth = options.swidth || "900px";
 
 this.variables.qengine.randomseed = Math.floor(Math.random() * 4294967296);
 
-_private.categoryCounts.code = 0;
 _private.categoryCounts.media = 0;
 _private.categoryCounts.text = 0;
-_private.categoryCounts.qengine = 0;
+_private.categoryCounts.quiz = 0;
 
 if(_public.options.loadStyles) {
 	var style = document.createElement('style');
@@ -293,36 +300,146 @@ if(_public.options.loadStyles) {
 }
 
 /***
-	Section: Validate Extensibles
+	Section: Validate Extensibles & Add Bengine Methods To Extensibles
 ***/
 
-var validExtAttr = ["type","name","category","upload","accept","fetchDependencies","insertContent","afterDOMinsert","saveContent","showContent","styleBlock","f","g"];
+/* API function methods for blocks, may be used in Bengine as well */
+_private.blockMethods = {
+	createUUID: function() {
+		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+			let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+			return v.toString(16);
+		});
+	},
+	decodeHTML: (function() {
+		var element = document.createElement('div');
+		
+		function decodeHTMLEntities (str) {
+			if(str && typeof str === 'string') {
+				element.innerHTML = str;
+				str = element.textContent;
+				element.textContent = '';
+			}
+		
+			return str;
+		}
+		
+		return decodeHTMLEntities;
+	})(),
+	emptyObject: function(obj) {
+		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
+			return true;
+		}
+		return false;
+	},
+	getResourcePath: function(str) {
+		let resource;
+		let parts = str.split(/\.(.+)/).filter(function(el) {return el.length != 0});
+		try {
+			resource = _public.variables[parts[0]][parts[1]];
+		} catch(err) {
+			/* resource does not exist */
+		}
+		
+		if(typeof resource === 'undefined') {
+			alertify.log('Qengine resource not found: ' + str,'error');
+		}
+		
+		return resource;
+	},
+	replaceVars: function(str) {
+		let re = /@@(.*?)@@/g;
+		
+		var nstr = str;
+		var allmatches = [];
+		var matches;
+		do {
+		    matches = re.exec(str);
+		    if (matches) {
+			    let parts = matches[1].split('.');
+			    let replacer;
+			    try {
+				    replacer = _public.variables[parts[0]][parts[1]];
+			    } catch(err) {
+				    replacer = '';
+				    alertify.log('Qengine variable not found: ' + matches[1],'error');
+			    }
+			    nstr = nstr.replace(matches[0],replacer);
+		    }
+		} while (matches);
+		
+		return nstr;
+	},
+	sendData: function(path,data) {
+		var promise = new Promise(function(resolve,reject) {
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.open("POST",_private.createURL(path),true);
+			xmlhttp.setRequestHeader("Content-type","application/json");
+			xmlhttp.onreadystatechange = function() {
+		        if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+					if(xmlhttp.status === 200) {
+						var result = JSON.parse(xmlhttp.responseText);
+						switch(result.msg) {
+							case 'done':
+								resolve({data:result.data});
+							case 'err':
+								reject({error:result.data.error});
+							default:
+								reject({error:'Unknown Error'});
+						}
+					} else {
+						reject({error:"Error: " + xmlhttp.status});
+					}
+		        }
+		    };
+		
+			xmlhttp.send(JSON.stringify(data));
+		})
+		
+		return promise;
+	}
+};
+
+/* validate block objects */
+var validExtAttr = ["type","name","category","upload","accept","destroy","fetchDependencies","insertContent","afterDOMinsert","runBlock","saveContent","showContent","styleBlock"];
 
 for(var prop in _private.extensibles)(function(prop) {
 	var extensibleAttributes = Object.keys(_private.extensibles[prop]);
 	
-	for(let i = 0; i < validExtAttr; i++) {
-		if(validExtAttr.includes(extensibleAttributes[i]) !== true) {
-			console.log("Bengine: invalid extensible configuration in " + _private.extensibles[prop]);
-		}
+	/* check that they have programmed only allowable methods */
+	try {
+		validExtAttr.forEach(function(element) {
+			if(!(extensibleAttributes.includes(element))) {
+				console.log("Bengine: invalid extensible configuration in " + prop + ". Missing method: " + element);
+				delete _private.extensibles[prop];
+				throw Error('invalid extensible');
+			}
+		});
+	} catch(err) {
+		return;
 	}
 	
+	/* count the extensible types */
 	if(_private.extensibles.hasOwnProperty(prop)) {
 		switch(_private.extensibles[prop].category) {
-			case "code":
-				_private.categoryCounts.code++; break;
 			case "media":
 				_private.categoryCounts.media++; break;
 			case "text":
 				_private.categoryCounts.text++; break;
-			case "qengine":
-				_private.categoryCounts.qengine++; break;
+			case "quiz":
+				_private.categoryCounts.quiz++; break;
 			default:
 				throw new Error("Invalid Category In Extensibles");
 		}
 	}
+	
+	/* add methods to the extensible */
+	_private.extensibles[prop].p = _private.blockMethods;
+	
+	/* add public Bengien attributes to extensible */
+	_private.extensibles[prop].d = _public;
+	
 })(prop);
-
 
 /***
 	Section: Replaceable Functions
@@ -399,21 +516,21 @@ if(funcs.hasOwnProperty('progressFinalize') && typeof funcs.progressFinalize ===
 	_private.progressFinalize = funcs.progressFinalize;
 } else {
 	_private.progressFinalize = function(msg,max) {
-		let progressbar = document.getElementById("bengine-progressbar" + _private.main);
+		let progressbar = document.getElementById("bengine-progressbar" + _private.engineID);
 		if(progressbar !== null) {
 			progressbar.setAttribute("value",max);
 			progressbar.style.visibility = "hidden";
 			progressbar.style.display = "none";
 		}
 
-		let autosave = document.getElementById("bengine-autosave" + _private.main);
+		let autosave = document.getElementById("bengine-autosave" + _private.engineID);
 		if(autosave !== null) {
 			autosave.style.visibility = "visible";
 			autosave.style.display = "block";
 
 		}
 		
-		let savebar = document.getElementById("bengine-savestatus" + _private.main)
+		let savebar = document.getElementById("bengine-savestatus" + _private.engineID)
 		if(savebar !== null) {
 			savebar.innerHTML = msg;
 		}
@@ -436,13 +553,13 @@ if(funcs.hasOwnProperty('progressInitialize') && typeof funcs.progressInitialize
 	_private.progressInitialize = funcs.progressInitialize;
 } else {
 	_private.progressInitialize = function(msg,max) {
-		let autosave = document.getElementById("bengine-autosave" + _private.main);
+		let autosave = document.getElementById("bengine-autosave" + _private.engineID);
 		if(autosave !== null) {
 			autosave.style.visibility = "hidden";
 			autosave.style.display = "none";
 		}
 
-		let progressbar = document.getElementById("bengine-progressbar" + _private.main);
+		let progressbar = document.getElementById("bengine-progressbar" + _private.engineID);
 		if(progressbar !== null) {
 			progressbar.setAttribute("value",0);
 			progressbar.setAttribute("max",max);
@@ -450,7 +567,7 @@ if(funcs.hasOwnProperty('progressInitialize') && typeof funcs.progressInitialize
 			progressbar.style.display = "block";
 		}
 		
-		let statusbar = document.getElementById("bengine-savestatus" + _private.main);
+		let statusbar = document.getElementById("bengine-savestatus" + _private.engineID);
 		if(statusbar !== null) {
 			statusbar.innerHTML = msg;
 		}
@@ -472,7 +589,7 @@ if(funcs.hasOwnProperty('progressUpdate') && typeof funcs.progressUpdate === 'fu
 	_private.progressUpdate = funcs.progressUpdate;
 } else {
 	_private.progressUpdate = function(value) {
-		let progressbar = document.getElementById("bengine-progressbar" + _private.main);
+		let progressbar = document.getElementById("bengine-progressbar" + _private.engineID);
 		if(progressbar !== null) {
 			progressbar.setAttribute("value",value);
 		}
@@ -505,7 +622,7 @@ if(funcs.hasOwnProperty('progressUpdate') && typeof funcs.progressUpdate === 'fu
 */
 this.blockContentShow = function(main,id,data) {
 	/* set object global, used to separate one engine from another */
-	_private.main = "-" + main + "-";
+	_private.engineID = "-" + main + "-";
 
 	/* main div */
 	var mainDiv = document.getElementById(main);
@@ -518,13 +635,13 @@ this.blockContentShow = function(main,id,data) {
 	var enginediv;
 	enginediv = document.createElement('div');
 	enginediv.setAttribute('class','bengine-instance');
-	enginediv.setAttribute('id','bengine-instance' + _private.main);
+	enginediv.setAttribute('id','bengine-instance' + _private.engineID);
 	mainDiv.appendChild(enginediv);
 
 	/* blocks */
 	var blocksdiv = document.createElement('div');
 	blocksdiv.setAttribute('class','bengine-x-blocks');
-	blocksdiv.setAttribute('id','bengine-x-blocks' + _private.main);
+	blocksdiv.setAttribute('id','bengine-x-blocks' + _private.engineID);
 
 	/* append blocks div to engine div */
 	enginediv.appendChild(blocksdiv);
@@ -552,8 +669,8 @@ this.blockContentShow = function(main,id,data) {
 
 		/* create the block div */
 		var group = document.createElement('div');
-		group.setAttribute('class','bengine-block bengine-block' + _private.main);
-		group.setAttribute('id','bengine' + _private.main + i);
+		group.setAttribute('class','bengine-block bengine-block' + _private.engineID);
+		group.setAttribute('id','bengine' + _private.engineID + i);
 
 		if(_public.options.enableSingleView && i !== 1) {
 			group.setAttribute('style','display:none;visibility:hidden;');
@@ -574,14 +691,14 @@ this.blockContentShow = function(main,id,data) {
 			direction = 1;
 		}
 
-		var viewDiv = document.getElementById('bengine-currentBlock' + _private.main);
+		var viewDiv = document.getElementById('bengine-currentBlock' + _private.engineID);
 		var viewStatus = Number(viewDiv.getAttribute('data-currentBlock'));
 
 		var next = viewStatus + direction;
 
-		var nextBlock = document.getElementById('bengine' + _private.main + next);
+		var nextBlock = document.getElementById('bengine' + _private.engineID + next);
 		if(nextBlock !== null) {
-			var currentBlock = document.getElementById('bengine' + _private.main + viewStatus);
+			var currentBlock = document.getElementById('bengine' + _private.engineID + viewStatus);
 			currentBlock.setAttribute('style','display:none;visibility:hidden;');
 
 			nextBlock.setAttribute('style','display:block;visibility:visible;');
@@ -592,7 +709,7 @@ this.blockContentShow = function(main,id,data) {
 
 	if(_public.options.enableSingleView) {
 		var singleViewBtnsDiv = document.createElement('div');
-		singleViewBtnsDiv.setAttribute('id','bengine-single-view' + _private.main);
+		singleViewBtnsDiv.setAttribute('id','bengine-single-view' + _private.engineID);
 		singleViewBtnsDiv.setAttribute('class','bengine-single-view');
 
 		var btnBack = document.createElement('button');
@@ -612,7 +729,7 @@ this.blockContentShow = function(main,id,data) {
 		};
 
 		var currentSingle = document.createElement('div');
-		currentSingle.setAttribute('id','bengine-currentBlock' + _private.main);
+		currentSingle.setAttribute('id','bengine-currentBlock' + _private.engineID);
 		currentSingle.setAttribute('data-currentBlock',1);
 		currentSingle.setAttribute('style','display:none;visibility:hidden;');
 
@@ -632,20 +749,44 @@ this.blockContentShow = function(main,id,data) {
 
 	Parameters:
 
-		main - string, id of an html div that is already attached to the DOM.
-		id - array, [page type,xid,directory id], like ['page',1,'t'] where 1 is xid
-		data - array, array of the block data [type,content,type,content,etc.]
+		engineID - string, id of an html div that is already attached to the DOM.
+		pageIDs - array, [bank,pid,version], like ['arithmetic','addition','1.0']
+		pageData - array, array of the block data [type,content,type,content,etc.]
 
 	Returns:
 
 		success - number, block count
 */
-this.blockEngineStart = function(main,id,data) {
-	/* set object global, used to separate one engine from another */
-	_private.main = "-" + main + "-";
+var blockEngineStart = function(engineID,pageIDs,pageData) {
+	/* validate data */
+	try {
+		if(typeof engineID !== 'string') throw Error('Invalid engineID passed to blockEngineStart()');
+		if(!Array.isArray(pageIDs)) throw Error('pageIDs must be array passed to blockEngineStart()');
+		if(pageIDs.length !== 3) throw Error('Invalid number of pageID elements passed to blockEngineStart()');
+		if(!Array.isArray(pageData)) throw Error('pageData must be array passed to blockEngineStart()');
+		pageIDs.forEach(function(element) { 
+			if(typeof element !== 'string') { 
+				throw Error('Invalid pageID element passed to blockEngineStart()'); 
+			}
+		});
+	} catch(err) {
+		alertify.alert(err.message);
+		return -1;
+	}
+	
+	/* initialize parameters */
+	_private.engineID = "-" + engineID + "-";
 
-	/* main div */
-	var mainDiv = document.getElementById(main);
+	_private.pageIDs = {
+		bank:pageIDs[0],
+		pid:pageIDs[1],
+		version:pageIDs[2]
+	}
+	
+	_private.status = 1;
+
+	/* check that div to place Bengine in exists */
+	var mainDiv = document.getElementById(engineID);
 
 	if(mainDiv === 'undefined') {
 		return -1;
@@ -655,13 +796,13 @@ this.blockEngineStart = function(main,id,data) {
 	var enginediv;
 	enginediv = document.createElement('div');
 	enginediv.setAttribute('class','bengine-instance');
-	enginediv.setAttribute('id','bengine-instance' + _private.main);
+	enginediv.setAttribute('id','bengine-instance' + _private.engineID);
 	mainDiv.appendChild(enginediv);
 
 	/* blocks */
 	var blocksdiv = document.createElement('div');
 	blocksdiv.setAttribute('class','bengine-x-blocks');
-	blocksdiv.setAttribute('id','bengine-x-blocks' + _private.main);
+	blocksdiv.setAttribute('id','bengine-x-blocks' + _private.engineID);
 
 	/* append blocks div to engine div */
 	enginediv.appendChild(blocksdiv);
@@ -679,7 +820,7 @@ this.blockEngineStart = function(main,id,data) {
 
 	var count = 0;
 	var i = 1;
-	var doubleBlockCount = data.length;
+	var doubleBlockCount = pageData.length;
 
 	/* hide the first delete button if no blocks, else show it */
 	if(doubleBlockCount < 2) {
@@ -690,9 +831,9 @@ this.blockEngineStart = function(main,id,data) {
 
 	while(count < doubleBlockCount) {
 		/* create the block */
-		var block = _private.generateBlock(i,data[count]);		
-		var retblock = _private.extensibles[data[count]].insertContent(block,data[count + 1]);
-		retblock = _private.addRunBtn(i,_private.extensibles[data[count]],retblock);
+		var block = _private.generateBlock(i,pageData[count]);		
+		var retblock = _private.extensibles[pageData[count]].insertContent(block,pageData[count + 1]);
+		retblock = _private.addRunBtn(i,_private.extensibles[pageData[count]],retblock);
 
 		/* create the block buttons */
 		buttons = _private.blockButtons(i);
@@ -707,8 +848,8 @@ this.blockEngineStart = function(main,id,data) {
 
 		/* create block + button div */
 		var group = document.createElement('div');
-		group.setAttribute('class','bengine-block bengine-block' + _private.main);
-		group.setAttribute('id','bengine' + _private.main + i);
+		group.setAttribute('class','bengine-block bengine-block' + _private.engineID);
+		group.setAttribute('id','bengine' + _private.engineID + i);
 
 		group.appendChild(retblock);
 		group.appendChild(buttons);
@@ -717,7 +858,7 @@ this.blockEngineStart = function(main,id,data) {
 		blocksdiv.appendChild(group);
 
 		/* do any rendering the block needs */
-		_private.extensibles[data[count]].afterDOMinsert('bengine-a' + _private.main + i,null);
+		_private.extensibles[pageData[count]].afterDOMinsert('bengine-a' + _private.engineID + i,null);
 
 		count += 2;
 		i++;
@@ -728,7 +869,7 @@ this.blockEngineStart = function(main,id,data) {
 	/* hidden form for media uploads */
 	var fileinput = document.createElement('input');
 	fileinput.setAttribute('type','file');
-	fileinput.setAttribute('id','bengine-file-select' + _private.main);
+	fileinput.setAttribute('id','bengine-file-select' + _private.engineID);
 
 	var filebtn = document.createElement('button');
 	filebtn.setAttribute('type','submit');
@@ -748,36 +889,17 @@ this.blockEngineStart = function(main,id,data) {
 	/* append the hidden file form to the blocksdiv */
 	enginediv.appendChild(fileform);
 
-	/*** HIDDEN PAGE TYPE, XID, & DID (directory id) ***/
-
-	/* add page id & name to hidden div */
-	var idDiv = document.createElement("input");
-	idDiv.setAttribute("id","bengine-x-id" + _private.main);
-	idDiv.setAttribute("name",id[0]);
-	idDiv.setAttribute("data-xid",id[1]);
-	idDiv.setAttribute("data-did",id[2]);
-	idDiv.style.visibility = 'hidden';
-	idDiv.style.display = 'none';
-	enginediv.appendChild(idDiv);
-
-	/*** HIDDEN STATUS ID DIV ***/
-
-	/* this is set to 0 after block adds and deletes & 1 after saves */
-	/* it is checked when exiting a window to notify the user that the page hasn't been saved */
-	var statusid = document.createElement('input');
-	statusid.setAttribute('type','hidden');
-	statusid.setAttribute('id','bengine-statusid' + _private.main);
-	statusid.setAttribute('value','1');
-	enginediv.appendChild(statusid);
-
-	/*** HIDDEN MAIN ID DIV ***/
-	var mainid = document.createElement('input');
-	mainid.setAttribute('type','hidden');
-	mainid.setAttribute('id','x-mainid');
-	mainid.setAttribute('value',main);
-	enginediv.appendChild(mainid);
-
 	return i;
+};
+
+this.blockEngineStart = function(engineID,pageIDs,pageData) {
+	if(document.readyState === "complete") {
+		blockEngineStart(engineID,pageIDs,pageData);
+	} else {
+		window.addEventListener('DOMContentLoaded', function() {
+			blockEngineStart(engineID,pageIDs,pageData);
+		});
+	}
 };
 
 // <<<fold>>>
@@ -811,7 +933,7 @@ _private.countBlocks = function() {
 		num++;
 
 		/* undefined is double banged to false, and node is double banged to true */
-		miss = Boolean(document.getElementById('bengine' + _private.main + num));
+		miss = Boolean(document.getElementById('bengine' + _private.engineID + num));
 	}
 
 	/* decrement num, since the check for id happens after increment */
@@ -838,7 +960,7 @@ _private.generateBlock = function(bid,btype) {
 		block.setAttribute('style','margin-bottom:26px;');
 	}
 	block.setAttribute('data-btype',btype);
-	block.setAttribute('id','bengine-a' + _private.main + bid);
+	block.setAttribute('id','bengine-a' + _private.engineID + bid);
 
 	return block;
 };
@@ -947,24 +1069,50 @@ _private.blockButtons = function(bid) {
 	/* this div will hold the buttons inside of it */
 	var buttonDiv = document.createElement('div');
 	buttonDiv.setAttribute('class','row');
-	buttonDiv.setAttribute('id','bengine-b' + _private.main + bid);
+	buttonDiv.setAttribute('id','bengine-b' + _private.engineID + bid);
 
 	var catDiv = document.createElement("div");
-	catDiv.setAttribute("id","bengine-cat" + _private.main + bid);
+	catDiv.setAttribute("id","bengine-cat" + _private.engineID + bid);
 	catDiv.setAttribute("class","bengine-blockbtns row");
 	buttonDiv.appendChild(catDiv);
 
-	var categoryArray = ["code","media","text","qengine"];
+	/* determine width of each category button */
+	let sum = 1; // delete button
+	var categoryArray = [];
+	if(_private.categoryCounts.media > 0) {
+		sum++;
+		categoryArray.push("media");
+	}
+	if(_private.categoryCounts.text > 0) {
+		sum++;
+		categoryArray.push("text");
+	}
+	if(_private.categoryCounts.quiz > 0) {
+		sum++;
+		categoryArray.push("quiz");
+	}
+	
+	let width;
+	switch(sum) {
+		case 2:
+			width = '50'; break;
+		case 3:
+			width = '1_3'; break;
+		case 4:
+			width = '25'; break;
+		default:
+			width = '100';
+	}
 	
 	categoryArray.forEach(function(element) {
 		var colDiv = document.createElement('div');
-		colDiv.setAttribute('class','col col-1_5');
+		colDiv.setAttribute('class','col col-' + width);
 		
 		/* create category button */
 		var btn = document.createElement('button');
 		btn.onclick = function() {
 			catDiv.setAttribute("style","display:none;visibility:hidden");
-			var row = document.getElementById("bengine" + _private.main + element + "-" + bid);
+			var row = document.getElementById("bengine" + _private.engineID + element + "-" + bid);
 			row.setAttribute("style","display:block;visibility:visible;");
 		};
 		btn.setAttribute("class","bengine-blockbtn bengine-addbtn");
@@ -972,26 +1120,30 @@ _private.blockButtons = function(bid) {
 		
 		/* create div for block buttons in category */
 		var subRow = document.createElement("div");
-		subRow.setAttribute("id","bengine" + _private.main + element + "-" + bid);
+		subRow.setAttribute("id","bengine" + _private.engineID + element + "-" + bid);
 		subRow.setAttribute("class","bengine-blockbtns row");
 		subRow.setAttribute("style","display:none;visibility:hidden;");
 		buttonDiv.appendChild(subRow);
 		
 		/* create back button to categories */
 		var colBackDiv = document.createElement('div');
-		colBackDiv.setAttribute('class','col col-1_' + (_private.categoryCounts[element] + 1));
+		colBackDiv.setAttribute('class','col col-100'); // columns: '1_' + (_private.categoryCounts[element] + 1)
 		
 		var btnBack = document.createElement('button');
 		btnBack.onclick = function() {
 			catDiv.setAttribute("style","display:block;visibility:visible");
-			var row = document.getElementById("bengine" + _private.main + element + "-" + bid);
+			var row = document.getElementById("bengine" + _private.engineID + element + "-" + bid);
 			row.setAttribute("style","display:none;visibility:hidden;");
 		};
 		btnBack.setAttribute("class","bengine-blockbtn bengine-addbtn");
 		btnBack.innerHTML = "&larr;";
 		
+		var backRow = document.createElement('div');
+		backRow.setAttribute('class','row');
+		
 		colBackDiv.appendChild(btnBack);
-		subRow.appendChild(colBackDiv);
+		backRow.appendChild(colBackDiv);
+		subRow.appendChild(backRow);
 
 		/* append everything */
 		colDiv.appendChild(btn);
@@ -999,10 +1151,10 @@ _private.blockButtons = function(bid) {
 	});
 	
 	var delDiv = document.createElement('div');
-	delDiv.setAttribute('class','col col-1_5');
+	delDiv.setAttribute('class','col col-' + width);
 
 	var delBtn = document.createElement('button');
-	delBtn.setAttribute('id','bengine-d' + _private.main + bid);
+	delBtn.setAttribute('id','bengine-d' + _private.engineID + bid);
 	delBtn.setAttribute("class","bengine-blockbtn bengine-delbtn");
 	delBtn.onclick = function() {
 		_private.deleteBlock(bid);
@@ -1020,7 +1172,7 @@ _private.blockButtons = function(bid) {
 			btn.onclick = function() {
 				_private.addBlock(bid,_private.extensibles[prop].type);
 				catDiv.setAttribute("style","display:block;visibility:visible");
-				var row = document.getElementById("bengine" + _private.main + _private.extensibles[prop].category + "-" + bid);
+				var row = document.getElementById("bengine" + _private.engineID + _private.extensibles[prop].category + "-" + bid);
 				row.setAttribute("style","display:none;visibility:hidden;");
 			};
 			btn.setAttribute("class","bengine-blockbtn bengine-addbtn");
@@ -1028,63 +1180,20 @@ _private.blockButtons = function(bid) {
 
 			var subRow = buttonDiv.childNodes[categoryArray.indexOf(_private.extensibles[prop].category) + 1];
 			
+			var btnRow = document.createElement('div');
+			btnRow.setAttribute('class','row');
+			
 			var colDiv = document.createElement('div');
-			colDiv.setAttribute('class','col col-1_' + (_private.categoryCounts[_private.extensibles[prop].category] + 1));
+			colDiv.setAttribute('class','col col-100'); // columns: '1_' + (_private.categoryCounts[_private.extensibles[prop].category] + 1)
 
 			colDiv.appendChild(btn);
-			subRow.appendChild(colDiv);
+			btnRow.appendChild(colDiv);
+			subRow.appendChild(btnRow);
 		}
 	})(prop);
 
 	return buttonDiv;
 };
-
-/*
-	Function: runCodeBlock
-	
-	This function sends block content to be run on a back-end service
-	
-	Parameters:
-	
-		bid - the block id
-		type - the type of block
-		getCode - a function that can retrieve the block code,namespace,vars by bid
-*/
-_private.runCodeBlock = function(bid,type,getCode) {
-	// data should have: 'code', 'vars', 'namespace'
-	var data = getCode(bid);
-	
-	data['type'] = type;
-	
-	var url = _private.createURL("/code");
-
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.open("POST",url,true);
-	xmlhttp.setRequestHeader("Content-type","application/json");
-
-	xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState === XMLHttpRequest.DONE) {
-			if(xmlhttp.status === 200) {
-				var result = JSON.parse(xmlhttp.responseText);
-
-				switch(result.msg) {
-					case 'blockrun':
-						// result.data ->
-						//		_public.resources[data['namespace'] = result.data.resources
-						//		_public.variables[data['namespace'] = result.data.variables
-						break;
-					case 'err':
-						alertify.alert(result.data.error);
-						break;
-					default:
-						alertify.alert("An Unknown Save Error Occurred");
-				}
-			}
-		}
-	}
-	
-	xmlhttp.send(JSON.stringify(data));
-}
 
 /*
 	Function: addRunBtn
@@ -1097,13 +1206,26 @@ _private.runCodeBlock = function(bid,type,getCode) {
 		type - the type of block
 		block - the block
 */
-_private.addRunBtn = function(bid,ext,block) {	
-	if(ext.category === "code") {
-		var runBtn = document.createElement('button');
-		runBtn.innerHTML = 'Run Code';
-		runBtn.onclick = _private.runCodeBlock.bind(null,'bengine-a' + _private.main + bid,ext.type,ext.saveContent);
-		block.appendChild(runBtn);
+_private.addRunBtn = function(bid,ext,block) {
+	/* block that use file upload do not require a run button */
+	if(ext.upload) {
+		return block;	
 	}
+	
+	/* if set to null, this block doesn't have/need a run btn */
+	if(ext.runBlock === null) {
+		return block;
+	}
+	
+	var runBtn = document.createElement('button');
+	if(ext.category === "code") {
+		runBtn.innerHTML = 'Run Code';
+	} else {
+		runBtn.innerHTML = 'Run Block';
+	}
+	
+	runBtn.onclick = ext.runBlock.bind(null,'bengine-a' + _private.engineID + bid);
+	block.appendChild(runBtn);
 	
 	return block;
 }
@@ -1130,13 +1252,13 @@ _private.makeSpace = function(bid,count) {
 
 		/* replace the button IDs */
 		var buttons = _private.blockButtons(next);
-		document.getElementById('bengine-b' + _private.main + track).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + _private.main + track));
+		document.getElementById('bengine-b' + _private.engineID + track).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + _private.engineID + track));
 
 		/* replace the content block id */
-		document.getElementById('bengine-a' + _private.main + track).setAttribute('id','bengine-a' + _private.main + next);
+		document.getElementById('bengine-a' + _private.engineID + track).setAttribute('id','bengine-a' + _private.engineID + next);
 
 		/* replace the block id */
-		document.getElementById('bengine' + _private.main + track).setAttribute('id','bengine' + _private.main + next);
+		document.getElementById('bengine' + _private.engineID + track).setAttribute('id','bengine' + _private.engineID + next);
 
 		/* update the count */
 		track--;
@@ -1162,12 +1284,12 @@ _private.makeSpace = function(bid,count) {
 _private.insertBlock = function(block,buttons,bid,count) {
 
 	/* grab the blocks container */
-	var blocksdiv = document.getElementById('bengine-x-blocks' + _private.main);
+	var blocksdiv = document.getElementById('bengine-x-blocks' + _private.engineID);
 
 	/* create the block div */
 	var group = document.createElement('div');
-	group.setAttribute('class','bengine-block bengine-block' + _private.main);
-	group.setAttribute('id','bengine' + _private.main + bid);
+	group.setAttribute('class','bengine-block bengine-block' + _private.engineID);
+	group.setAttribute('id','bengine' + _private.engineID + bid);
 
 	/* append the content block & buttons div to the block div */
 	group.appendChild(block);
@@ -1215,12 +1337,12 @@ _private.createBlock = function(cbid,blockObj) {
 		
 	var blockbuttons = _private.blockButtons(bid);
 	_private.insertBlock(retblock,blockbuttons,bid,blockCount);
-	blockObj.afterDOMinsert('bengine-a' + _private.main + bid,null);
+	blockObj.afterDOMinsert('bengine-a' + _private.engineID + bid,null);
 
 	/* make delete buttons visible */
 	var i = 0;
 	while(i <= blockCount) {
-		document.getElementById('bengine-d' + _private.main + i).style.visibility = 'visible';
+		document.getElementById('bengine-d' + _private.engineID + i).style.visibility = 'visible';
 		i++;
 	}
 };
@@ -1240,7 +1362,7 @@ _private.createBlock = function(cbid,blockObj) {
 		none
 */
 _private.addBlock = function(bid,blockTypeName) {
-	if(_public.options.blockLimit < (document.getElementsByClassName("bengine-block" + _private.main).length + 1)) {
+	if(_public.options.blockLimit < (document.getElementsByClassName("bengine-block" + _private.engineID).length + 1)) {
 		alertify.alert("You Have Reached The Block Limit");
 		return;
 	}
@@ -1281,13 +1403,13 @@ _private.closeSpace = function(cbid,count) {
 
 		/* replace the button IDs */
 		var buttons = _private.blockButtons(bid);
-		document.getElementById('bengine-b' + _private.main + next).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + _private.main + next));
+		document.getElementById('bengine-b' + _private.engineID + next).parentNode.replaceChild(buttons,document.getElementById('bengine-b' + _private.engineID + next));
 
 		/* replace the content block id */
-		document.getElementById('bengine-a' + _private.main + next).setAttribute('id','bengine-a' + _private.main + bid);
+		document.getElementById('bengine-a' + _private.engineID + next).setAttribute('id','bengine-a' + _private.engineID + bid);
 
 		/* replace the block id */
-		document.getElementById('bengine' + _private.main + next).setAttribute('id','bengine' + _private.main + bid);
+		document.getElementById('bengine' + _private.engineID + next).setAttribute('id','bengine' + _private.engineID + bid);
 
 		/* update the bid */
 		bid++;
@@ -1308,7 +1430,13 @@ _private.closeSpace = function(cbid,count) {
 		nothing - *
 */
 _private.removeBlock = function(bid) {
-	var element = document.getElementById('bengine' + _private.main + bid);
+	let element = document.getElementById('bengine' + _private.engineID + bid);
+	let block = element.childNodes[0];
+	let blockType = block.getAttribute('data-btype');
+	
+	/* run block's destructor */
+	_private.extensibles[blockType].destroy(block);
+	
 	element.parentNode.removeChild(element);
 };
 
@@ -1342,10 +1470,10 @@ _private.deleteBlock = function(cbid) {
 	var i = 0;
 	blockCount = _private.countBlocks();
 	while(i < blockCount) {
-		document.getElementById('bengine-d' + _private.main + i).style.visibility = 'visible';
+		document.getElementById('bengine-d' + _private.engineID + i).style.visibility = 'visible';
 		i++;
 	}
-	document.getElementById('bengine-d' + _private.main + i).style.visibility = 'hidden';
+	document.getElementById('bengine-d' + _private.engineID + i).style.visibility = 'hidden';
 
 	/* save blocks to temp table, indicated by false */
 	saveBlocks(false);
@@ -1378,11 +1506,11 @@ this.revertBlocks = function() {
 	var url = _private.createURL("/revertblocks");
 
 	/* get the pid & page name */
-	var xid = document.getElementById('bengine-x-id' + _private.main).getAttribute('data-xid');
-	var xidName = document.getElementById('bengine-x-id' + _private.main).getAttribute('name');
+	var xid = document.getElementById('bengine-x-id' + _private.engineID).getAttribute('data-xid');
+	var xidName = document.getElementById('bengine-x-id' + _private.engineID).getAttribute('name');
 
 	/* get the did for restarting the bengine instance */
-	var did = document.getElementById('bengine-x-id' + _private.main).getAttribute('data-did');
+	var did = document.getElementById('bengine-x-id' + _private.engineID).getAttribute('data-did');
 
 	var xmlhttp;
 	xmlhttp = new XMLHttpRequest();
@@ -1400,7 +1528,7 @@ this.revertBlocks = function() {
 
 				switch(result.msg) {
 					case 'success':
-						var oldBengine = document.getElementById('bengine-instance' + _private.main);
+						var oldBengine = document.getElementById('bengine-instance' + _private.engineID);
 						var main = oldBengine.parentNode;
 						main.removeChild(oldBengine);
 						if(result.data === "") {
@@ -1408,7 +1536,7 @@ this.revertBlocks = function() {
 						} else {
 							blockEngineStart(main.getAttribute('id'),[xidName,xid,did],result.data.split(","));
 						}
-						document.getElementById("bengine-savestatus" + _private.main).innerHTML = "Saved";
+						document.getElementById("bengine-savestatus" + _private.engineID).innerHTML = "Saved";
 						break;
 					case 'noxid':
 						alertify.alert("This Page Is Not Meant To Be Visited Directly."); break;
@@ -1428,6 +1556,79 @@ this.revertBlocks = function() {
 };
 
 /*
+	Function: viewQengineFile
+
+	This function grabs quiz block data and assembles a question file that can be loaded into Qengine.
+
+	Parameters:
+
+		none
+
+	Returns:
+
+		nothing - *
+*/
+var createQengineFile = function() {
+	var blockCount = _private.countBlocks();
+	var bid = 1;
+
+	/* get the block types & contents */
+	var QengineArray = [];
+	if(blockCount > 0) {
+		var i = 0;
+		var ns = 1;
+		while(blockCount >= bid) {
+			/* get the block type */
+			let btype = document.getElementById('bengine-a' + _private.engineID + bid).getAttribute('data-btype');
+			
+			/* check for quiz block */
+			if(_private.extensibles[btype].category !== "quiz") {
+				QengineArray.push("# " + btype + " block cannot be used with Qengine\n\n");
+				i++; bid++; continue;
+			}
+
+			/* get the block content */
+			let bstuff = _private.extensibles[btype].saveContent('bengine-a' + _private.engineID + bid);
+			let bcontent = bstuff['content'];
+			
+			/* check for namespace, if none, create random one */
+			var namespace;
+			if(Object.keys(bstuff).includes('namespace')) {
+				namespace = bstuff['namespace'];
+			} else {
+				namespace = 'ns' + ns++;
+			}
+			
+			if(btype !== 'qstep') {
+QengineArray.push(`{%${btype}:${namespace}
+${bcontent}
+%}
+
+`);
+			} else {
+				QengineArray.push(`@@@@${bcontent}\n\n`);
+			}
+
+			i++;
+			bid++;
+		}
+	}
+	
+	var QengineFile = QengineArray.join('');
+	
+	var qd = window.open();
+	qd.document.open();
+	qd.document.write('<html><head><title>Qengine File</title></head><body>');
+	qd.document.write('<pre>' + QengineFile + '</pre>');
+	qd.document.write('</body></html>');
+	qd.document.close();
+}
+
+this.createQengineFile = function() {
+	createQengineFile();
+};
+
+/*
 	Function: saveBlocks
 
 	This function grabs block data and sends it to the back-end for saving.
@@ -1444,12 +1645,11 @@ if(_public.options.enableSave === false) {
 	saveBlocks = function(which) { /* do nothing */ };
 } else {
 var saveBlocks = function(which) {
-
 	/* set parameter to be sent to back-end that determines which table to save to, temp or perm, & set save status display */
 	var table;
 	if(which === false) {
 		table = 0;
-		let statusbar = document.getElementById("bengine-savestatus" + _private.main);
+		let statusbar = document.getElementById("bengine-savestatus" + _private.engineID);
 		if(statusbar !== null) {
 			statusbar.innerHTML = "Not Saved";
 		}
@@ -1457,7 +1657,7 @@ var saveBlocks = function(which) {
 		table = 1;
 	}
 
-	document.getElementById('bengine-statusid' + _private.main).setAttribute('value',table);
+	_private.status = table;
 
 	/* variables for storing block data */
 	var blockType = [];
@@ -1472,11 +1672,11 @@ var saveBlocks = function(which) {
 		var i = 0;
 		while(blockCount >= bid) {
 			/* get the block type */
-			var btype = document.getElementById('bengine-a' + _private.main + bid).getAttribute('data-btype');
+			var btype = document.getElementById('bengine-a' + _private.engineID + bid).getAttribute('data-btype');
 			blockType[i] = btype;
 
 			/* get the block content */
-			blockContent[i] = _private.extensibles[btype].saveContent('bengine-a' + _private.main + bid);
+			blockContent[i] = _private.extensibles[btype].saveContent('bengine-a' + _private.engineID + bid);
 
 			i++;
 			bid++;
@@ -1489,10 +1689,6 @@ var saveBlocks = function(which) {
 
 	/* create the url destination for the ajax request */
 	var url = _private.createURL("/save");
-
-	/* get the pid & page name */
-	var xid = document.getElementById('bengine-x-id' + _private.main).getAttribute('data-xid');
-	var xidName = document.getElementById('bengine-x-id' + _private.main).getAttribute('name');
 
 	var xmlhttp;
 	xmlhttp = new XMLHttpRequest();
@@ -1512,11 +1708,10 @@ var saveBlocks = function(which) {
 		};
 	}
 
-	contentToSave['xid'] = xid;
-	contentToSave['pagetype'] = xidName;
+	contentToSave['bank'] = _private.pageIDs.bank;
+	contentToSave['pid'] = _private.pageIDs.pid;
+	contentToSave['version'] = _private.pageIDs.version;
 	contentToSave['tabid'] = table;
-
-	var params = JSON.stringify(contentToSave);
 
 	xmlhttp.open("POST",url,true);
 
@@ -1530,7 +1725,7 @@ var saveBlocks = function(which) {
 				switch(result.msg) {
 					case 'blocksaved':
 						if(table === 1) {
-							let statusbar = document.getElementById("bengine-savestatus" + _private.main);
+							let statusbar = document.getElementById("bengine-savestatus" + _private.engineID);
 							if(statusbar !== null) {
 								statusbar.innerHTML = "Saved";
 							}
@@ -1549,7 +1744,7 @@ var saveBlocks = function(which) {
         }
     };
 
-	xmlhttp.send(params);
+	xmlhttp.send(JSON.stringify(contentToSave));
 };
 }
 
@@ -1574,7 +1769,7 @@ this.saveBlocks = function(which) {
 _private.uploadMedia = function(bid,blockObj) {
 
 	/* get the hidden file-select object that will store the user's file selection */
-	var fileSelect = document.getElementById('bengine-file-select' + _private.main);
+	var fileSelect = document.getElementById('bengine-file-select' + _private.engineID);
 	
 	if(blockObj.accept !== 'undefined' && typeof blockObj.accept === 'string') {
 		fileSelect.setAttribute("accept", blockObj.accept);
@@ -1644,7 +1839,7 @@ _private.uploadMedia = function(bid,blockObj) {
 					formData.append('media',file,file.name);
 
 					/* get the directory id */
-					var did = document.getElementById('bengine-x-id' + _private.main).getAttribute('data-did');
+					var did = document.getElementById('bengine-x-id' + _private.engineID).getAttribute('data-did');
 
 					/* grab the domain and create the url destination for the ajax request */
 					var url = _private.createURL("/uploadmedia?did=" + did + "&btype=" + blockObj.type);
@@ -1739,7 +1934,7 @@ _private.uploadMedia = function(bid,blockObj) {
 				});
 
 				promise.then(function(data) {
-					blockObj.afterDOMinsert('bengine-a' + _private.main + bid,data);
+					blockObj.afterDOMinsert('bengine-a' + _private.engineID + bid,data);
 
 					/* save blocks to temp table, indicated by false */
 					saveBlocks(false);

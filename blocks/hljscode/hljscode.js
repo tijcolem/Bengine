@@ -3,20 +3,66 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 	this.name = "hljs";
 	this.category = "text";
 	this.upload = false;
+	this.accept = null;
 
-	var xcodeObj = this;
-	var blocklimit = 15; // these are lines <br>, not chars
+	var thisBlock = this;
+	var _private = {};
+	
+	_private.blocklimit = 15; // these are lines <br>, not chars
+	
+	/*
+		This function is attached as the event listener to the code block. It detects key presses and applies styling.
 
-	var removeHighlights = function(blockText) {
+		block - the <code> tag
+		event - the keydown event that triggers the function
+	*/
+	_private.codeKeys = function(block,event) {
+		var breakCount = (block.innerHTML.match(/(<br>|\n)/g) || []).length;
+		if(event.keyCode === 13 && (breakCount + 1) >= _private.blocklimit) {
+			event.preventDefault();
+		} else if(event.keyCode !== 8 && breakCount >= _private.blocklimit) {
+			event.preventDefault();
+		} else {
+			/* tab */
+			if (event.keyCode === 9) {
+
+				/* prevent default tab behavior */
+				event.preventDefault();
+
+				/* grab the cursor location */
+				var doc = block.ownerDocument.defaultView;
+				var sel = doc.getSelection();
+				var range = sel.getRangeAt(0);
+
+				/* insert 4 spaces representing a tab */
+				var tabNode = document.createTextNode("\u00a0\u00a0\u00a0\u00a0");
+				range.insertNode(tabNode);
+
+				/* replace cursor to after tab location */
+				range.setStartAfter(tabNode);
+				range.setEndAfter(tabNode);
+				sel.removeAllRanges();
+				sel.addRange(range);
+			}
+		}
+	},
+	/*
+		This function is a wrapper for whatever function parses and styles the code block. Validation might also be included in here.
+
+		block - the block to render
+	*/
+	_private.renderCode = function renderCode(block) {
+		/* add code formatting */
+		hljs.highlightBlock(block);
+	}
+
+	_private.removeHighlights = function(blockText) {
 		return blockText.replace(/<span[^>]*>/g,"").replace(/<\/span>/g,"");
 	};
 	
-	var emptyObject = function(obj) {
-		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
-			return true;
-		}
-		return false;
-	}
+	this.destroy = function() {
+		return;
+	};
 	
 	this.fetchDependencies = function() {
 		var highlightjs = {
@@ -32,14 +78,13 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 	this.insertContent = function(block,bcontent) {
 		var codeBlock = document.createElement("code");
 		codeBlock.setAttribute("class","xCde");
-		codeBlock.onblur = function() {
-			xcodeObj.f.renderCode(this);
-		};
 		codeBlock.contentEditable = true;
 
 		/* defaul text */
-		if(BengineConfig.options.defaultText && emptyObject(bcontent)) {
-			codeBlock.innerHTML = "var description = 'Programming languages are auto-detected.';<br>function default(parameter) {<br>&nbsp;&nbsp;&nbsp;&nbsp;var instructions = 'When you click outside the block syntax is highlighted.';<br>&nbsp;&nbsp;&nbsp;&nbsp;alert(parameter + instructions);<br>}<br>default(description);";
+		if(thisBlock.p.emptyObject(bcontent)) {
+			if(thisBlock.d.options.defaultText) {
+				codeBlock.innerHTML = "var description = 'Programming languages are auto-detected.';<br>function default(parameter) {<br>&nbsp;&nbsp;&nbsp;&nbsp;var instructions = 'When you click outside the block syntax is highlighted.';<br>&nbsp;&nbsp;&nbsp;&nbsp;alert(parameter + instructions);<br>}<br>default(description);";
+			}
 		} else {
 			codeBlock.innerHTML = bcontent['content'];
 		}
@@ -48,11 +93,11 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 
 		/* attach keyboard shortcuts to iframe */
 		if (codeBlock.addEventListener) {
-			codeBlock.addEventListener("keydown",this.f.codeKeys.bind(null,block),false);
+			codeBlock.addEventListener("keydown",_private.codeKeys.bind(null,block),false);
 		} else if (codeBlock.attachEvent) {
-			codeBlock.attachEvent("onkeydown",this.f.codeKeys.bind(null,block));
+			codeBlock.attachEvent("onkeydown",_private.codeKeys.bind(null,block));
 		} else {
-			codeBlock.onkeydown = this.f.codeKeys.bind(null,block);
+			codeBlock.onkeydown = _private.codeKeys.bind(null,block);
 		}
 
 		/* set limit on paste */
@@ -67,7 +112,7 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 			var breakCount = (this.innerHTML.match(/<br>/g) || []).length;
 			var lineCount = (ptext.match(/\n/g) || []).length;
 
-			if((breakCount + lineCount) >= blocklimit) {
+			if((breakCount + lineCount) >= _private.blocklimit) {
 				return false;
 			} else {
 				return true;
@@ -79,11 +124,16 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 
 	this.afterDOMinsert = function(bid,data) {
 		var codeBlock = document.getElementById(bid).childNodes[0];
-		this.f.renderCode(codeBlock);
+		_private.renderCode(codeBlock);
 	};
+	
+	this.runBlock = function(bid) {
+		let codeBlock = document.getElementById(bid).childNodes[0];
+		_private.renderCode(codeBlock);
+	}
 
 	this.saveContent = function(bid) {
-		return {'content':removeHighlights(document.getElementById(bid).children[0].innerHTML)};
+		return {'content':_private.removeHighlights(document.getElementById(bid).children[0].innerHTML)};
 	};
 
 	this.showContent = function(block,bcontent) {		
@@ -92,7 +142,7 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 		codeBlock.innerHTML = bcontent['content'];
 
 		block.appendChild(codeBlock);
-		this.f.renderCode(codeBlock);
+		_private.renderCode(codeBlock);
 
 		return block;
 	};
@@ -131,70 +181,4 @@ BengineConfig.extensibles.xcode = new function Xcode() {
 		
 		return stylestr;
 	};
-
-	this.f = {
-		/*
-			Function: codeKeys
-
-			This function is attached as the event listener to the code block. It detects key presses and applies styling.
-
-			Parameters:
-
-				block - the <code> tag
-				event - the keydown event that triggers the function
-
-			Returns:
-
-				none
-		*/
-		codeKeys: function codeKeys(block,event) {
-			var breakCount = (block.innerHTML.match(/(<br>|\n)/g) || []).length;
-			if(event.keyCode === 13 && (breakCount + 1) >= blocklimit) {
-				event.preventDefault();
-			} else if(event.keyCode !== 8 && breakCount >= blocklimit) {
-				event.preventDefault();
-			} else {
-				/* tab */
-				if (event.keyCode === 9) {
-
-					/* prevent default tab behavior */
-					event.preventDefault();
-
-					/* grab the cursor location */
-					var doc = block.ownerDocument.defaultView;
-					var sel = doc.getSelection();
-					var range = sel.getRangeAt(0);
-
-					/* insert 4 spaces representing a tab */
-					var tabNode = document.createTextNode("\u00a0\u00a0\u00a0\u00a0");
-					range.insertNode(tabNode);
-
-					/* replace cursor to after tab location */
-					range.setStartAfter(tabNode);
-					range.setEndAfter(tabNode);
-					sel.removeAllRanges();
-					sel.addRange(range);
-				}
-			}
-		},
-		/*
-			Function: renderCode
-
-			This function is a wrapper for whatever function parses and styles the code block. Validation might also be included in here.
-
-			Parameters:
-
-				block - the block to render
-
-			Returns:
-
-				none
-		*/
-		renderCode: function renderCode(block) {
-			/* add code formatting */
-			hljs.highlightBlock(block);
-		}
-	};
-
-	this.g = {};
 };

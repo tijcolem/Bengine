@@ -3,16 +3,28 @@ BengineConfig.extensibles.latex = new function Latex() {
 	this.name = "latex";
 	this.category = "text";
 	this.upload = false;
+	this.accept = null;
 
-	var latexObj = this;
-	var blocklimit = 2097;
+	var thisBlock = this;
+	var _private = {};
 	
-	var emptyObject = function(obj) {
-		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
-			return true;
+	_private.blocklimit = 2097;
+	
+	_private.renderLatex = function(block) {
+			/* get the math notation and prepend/append double dollars, which is how MathJax identifies LaTeX markup language */
+			var str = "$$" + block.textContent + "$$";
+
+			/* put the latex into the image preview block */
+			var imageBlock = block.parentNode.childNodes[0];
+			imageBlock.innerHTML = str;
+
+			/* render the image */
+			MathJax.Hub.Queue(["Typeset",MathJax.Hub,imageBlock]);
 		}
-		return false;
-	}
+
+	this.destroy = function() {
+		return;
+	};
 
 	this.fetchDependencies = function() {
 		var mathjax = {
@@ -37,20 +49,19 @@ BengineConfig.extensibles.latex = new function Latex() {
 
 		var latexBlock = document.createElement('div');
 		latexBlock.setAttribute('class','xLtx');
-		latexBlock.onblur = function() {
-			latexObj.f.renderLatex(this);
-		};
 		latexBlock.contentEditable = true;
 		/* defaul text */
-		if(BengineConfig.options.defaultText && emptyObject(bcontent)) {
-			latexBlock.innerHTML = 'LaTeX \\ Mark \\ Up: \\quad \\frac{d}{dx}\\left( \\int_{0}^{x} f(u)\\,du\\right)=f(x)';
+		if(thisBlock.p.emptyObject(bcontent)) {
+			if(thisBlock.d.options.defaultText) {
+				latexBlock.innerHTML = 'LaTeX \\ Mark \\ Up: \\quad \\frac{d}{dx}\\left( \\int_{0}^{x} f(u)\\,du\\right)=f(x)';
+			}
 		} else {
 			latexBlock.innerHTML = bcontent['content'];
 		}
 
 		/* set limit function on keydown event */
 		function setLimit(block,event) {
-			if(event.keyCode !== 8 && block.innerText.length > blocklimit) {
+			if(event.keyCode !== 8 && block.innerText.length > _private.blocklimit) {
 				event.preventDefault();
 			}
 		}
@@ -72,7 +83,7 @@ BengineConfig.extensibles.latex = new function Latex() {
 				ptext = event.clipboardData.getData('text/plain');
 			}
 
-			if((this.innerText.length + ptext.length) > blocklimit) {
+			if((this.innerText.length + ptext.length) > _private.blocklimit) {
 				return false;
 			}
 			return true;
@@ -85,8 +96,12 @@ BengineConfig.extensibles.latex = new function Latex() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		this.f.renderLatex(document.getElementById(bid).childNodes[1]);
+		_private.renderLatex(document.getElementById(bid).childNodes[1]);
 	};
+	
+	this.runBlock = function(bid) {
+		_private.renderLatex(document.getElementById(bid).childNodes[1]);
+	}
 
 	this.saveContent = function(bid) {
 		return {'content':document.getElementById(bid).children[1].innerHTML};
@@ -104,7 +119,7 @@ BengineConfig.extensibles.latex = new function Latex() {
 		block.appendChild(latexpreview);
 		block.appendChild(latexBlock);
 
-		this.f.renderLatex(latexBlock);
+		_private.renderLatex(latexBlock);
 
 		return block;
 	};
@@ -135,20 +150,4 @@ BengineConfig.extensibles.latex = new function Latex() {
 		}`;
 		return stylestr;
 	};
-
-	this.f = {
-		renderLatex: function(block) {
-			/* get the math notation and prepend/append double dollars, which is how MathJax identifies LaTeX markup language */
-			var str = "$$" + block.textContent + "$$";
-
-			/* put the latex into the image preview block */
-			var imageBlock = block.parentNode.childNodes[0];
-			imageBlock.innerHTML = str;
-
-			/* render the image */
-			MathJax.Hub.Queue(["Typeset",MathJax.Hub,imageBlock]);
-		}
-	};
-	
-	this.g = {};
 };

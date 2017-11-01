@@ -5,7 +5,12 @@ BengineConfig.extensibles.image = new function Image() {
 	this.upload = true;
 	this.accept = ".bmp,.bmp2,.bmp3,.jpeg,.jpg,.pdf,.png,.svg";
 
-	var imageObj = this;
+	var thisBlock = this;
+	var _private = {};
+	
+	this.destroy = function() {
+		return;
+	};
 	
 	this.fetchDependencies = function() {
 		return null;
@@ -27,6 +32,8 @@ BengineConfig.extensibles.image = new function Image() {
 			imagetag.src = data;
 		}
 	};
+	
+	this.runBlock = null;
 
 	this.saveContent = function(bid) {
 		/* replace() is for escaping backslashes and making relative path */
@@ -58,8 +65,4 @@ BengineConfig.extensibles.image = new function Image() {
 		}`;
 		return stylestr;
 	};
-	
-	this.f = {};
-	
-	this.g = {};
 };

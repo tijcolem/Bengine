@@ -5,7 +5,12 @@ BengineConfig.extensibles.video = new function Video() {
 	this.upload = true;
 	this.accept = ".avi,.flv,.mov,.mp4,.mpeg,.ogg,.rm,.webm,.wmv";
 
-	var videoObj = this;
+	var thisBlock = this;
+	var _private = {};
+	
+	this.destroy = function() {
+		return;
+	};
 	
 	this.fetchDependencies = function() {
 		return null;
@@ -35,6 +40,8 @@ BengineConfig.extensibles.video = new function Video() {
 			mediatag.parentNode.load();
 		}
 	};
+	
+	this.runBlock = null;
 
 	this.saveContent = function(bid) {
 		var mediastr = document.getElementById(bid).children[0].children[0].src;
@@ -71,8 +78,4 @@ BengineConfig.extensibles.video = new function Video() {
 		}`;
 		return stylestr;
 	};
-	
-	this.f = {};
-	
-	this.g = {};
 };

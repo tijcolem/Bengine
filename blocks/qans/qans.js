@@ -1,7 +1,7 @@
-BengineConfig.extensibles.title = new function Title() {
-	this.type = "title";
-	this.name = "title";
-	this.category = "text";
+BengineConfig.extensibles.qans = new function Qans() {
+	this.type = "qans";
+	this.name = "grade";
+	this.category = "quiz";
 	this.upload = false;
 	this.accept = null;
 
@@ -20,10 +20,11 @@ BengineConfig.extensibles.title = new function Title() {
 
 	this.insertContent = function(block,bcontent) {
 		var str;
+		let explain = 'title="Put a variable here that resolves to a value between 0 and 1. It is the final student grade."'
 		if(!thisBlock.p.emptyObject(bcontent)) {
-			str = '<input type="text" class="xTit" maxlength="' + _private.blocklimit + '" value="' + bcontent['content'] + '">';
+			str = `<input type="text" class="xQans" maxlength="${_private.blocklimit}" value="${bcontent['content']}" placeholder="Variable 0-1 for student grade.">`;
 		} else {
-			str = '<input type="text" class="xTit" maxlength="' + _private.blocklimit + '" placeholder="Title">';
+			str = `<input type="text" class="xQans" maxlength="${_private.blocklimit}" placeholder="Variable 0-1 for student grade.">`;
 		}
 
 		block.innerHTML = str;
@@ -35,23 +36,25 @@ BengineConfig.extensibles.title = new function Title() {
 		/* nothing to do */
 	};
 	
-	this.runBlock = function(bid) {
-		/* nothing to do */
-	}
+	this.runBlock = null;
 
 	this.saveContent = function(bid) {
-		return {'content':document.getElementById(bid).children[0].value};
+		var variable = document.getElementById(bid).children[0].value.split("\n")[0]; // only accept one line
+		if(variable.match(/@@(.*)@@/g) === null) {
+			variable = '@@' + variable + '@@';
+		}
+		return {'content':variable};
 	};
 
 	this.showContent = function(block,bcontent) {
-		var str = '<div class="xTit-show">' + bcontent['content'] + '</div>';
+		var str = '<div class="xQans-show">' + bcontent['content'] + '</div>';
 		block.innerHTML = str;
 
 		return block;
 	};
 
 	this.styleBlock = function() {
-		var stylestr = `.xTit {
+		var stylestr = `.xQans {
 			display: inline-block;
 			width: 100%;
 			height: 32px;
@@ -69,7 +72,7 @@ BengineConfig.extensibles.title = new function Title() {
 			color: black;
 		}
 
-		.xTit-show {
+		.xQans-show {
 			display: inline-block;
 			width: 100%;
 			height: auto;

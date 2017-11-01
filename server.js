@@ -166,6 +166,7 @@ module.exports = function(config) {
 	/// preview page
 	/// embed page
 	app.post('/code',routes.code);
+	app.post('/files',routes.files);
 	app.post('/revert',routes.revert);
 	app.post('/save',routes.save);
 	app.post('/upload',routes.upload);

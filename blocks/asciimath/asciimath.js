@@ -3,16 +3,32 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 	this.name = "asciimath";
 	this.category = "text";
 	this.upload = false;
+	this.accept = null;
 
-	var xmathObj = this;
-	var blocklimit = 2047;
+	var thisBlock = this;
+	var _private = {};
 	
-	var emptyObject = function(obj) {
-		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
-			return true;
-		}
-		return false;
-	}
+	_private.blocklimit = 2047;
+	
+	/*
+		private methods
+	*/
+	
+	var renderMath = function(block) {
+		/* get the math notation and prepend/append backticks, which is how MathJax identifies ASCIIMath markup language */
+		var str = "`" + block.textContent + "`";
+
+		/* put the asciimath into the image preview block */
+		var imageBlock = block.parentNode.childNodes[0];
+		imageBlock.innerHTML = str;
+
+		/* render the image */
+		MathJax.Hub.Queue(["Typeset",MathJax.Hub,imageBlock]);
+	};
+	
+	this.destroy = function() {
+		return;
+	};
 	
 	this.fetchDependencies = function() {
 		var mathjax = {
@@ -37,20 +53,20 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 
 		var mathBlock = document.createElement('div');
 		mathBlock.setAttribute('class','xMat');
-		mathBlock.onblur = function() {
-			xmathObj.f.renderMath(this);
-		};
+		
 		mathBlock.contentEditable = true;
 		/* defaul text */
-		if(BengineConfig.options.defaultText && emptyObject(bcontent)) {
-			mathBlock.innerHTML = 'AsciiMath \\ Mark \\ Up: \\ \\ \\ sum_(i=1)^n i^3=((n(n+1))/2)^2';
+		if(thisBlock.p.emptyObject(bcontent)) {
+			if(thisBlock.d.options.defaultText) {
+				mathBlock.innerHTML = 'AsciiMath \\ Mark \\ Up: \\ \\ \\ sum_(i=1)^n i^3=((n(n+1))/2)^2';
+			}
 		} else {
 			mathBlock.innerHTML = bcontent['content'];
 		}
 
 		/* set limit function on keydown event */
 		function setLimit(block,event) {
-			if(event.keyCode !== 8 && block.innerText.length > blocklimit) {
+			if(event.keyCode !== 8 && block.innerText.length > _private.blocklimit) {
 				event.preventDefault();
 			}
 		}
@@ -72,7 +88,7 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 				ptext = event.clipboardData.getData('text/plain');
 			}
 
-			if((this.innerText.length + ptext.length) > blocklimit) {
+			if((this.innerText.length + ptext.length) > _private.blocklimit) {
 				return false;
 			}
 			return true;
@@ -85,7 +101,11 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		this.f.renderMath(document.getElementById(bid).childNodes[1]);
+		renderMath(document.getElementById(bid).childNodes[1]);
+	};
+	
+	this.runBlock = function(bid) {
+		renderMath(document.getElementById(bid).childNodes[1]);
 	};
 
 	this.saveContent = function(bid) {
@@ -104,7 +124,7 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 		block.appendChild(mathpreview);
 		block.appendChild(mathBlock);
 
-		this.f.renderMath(mathBlock);
+		renderMath(mathBlock);
 
 		return block;
 	};
@@ -139,20 +159,4 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 		}`;
 		return stylestr;
 	};
-
-	this.f = {
-		renderMath: function(block) {
-			/* get the math notation and prepend/append backticks, which is how MathJax identifies ASCIIMath markup language */
-			var str = "`" + block.textContent + "`";
-
-			/* put the asciimath into the image preview block */
-			var imageBlock = block.parentNode.childNodes[0];
-			imageBlock.innerHTML = str;
-
-			/* render the image */
-			MathJax.Hub.Queue(["Typeset",MathJax.Hub,imageBlock]);
-		}
-	};
-	
-	this.g = {};
 };

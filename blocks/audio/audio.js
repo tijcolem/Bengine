@@ -5,7 +5,12 @@ BengineConfig.extensibles.audio = new function Audio() {
 	this.upload = true;
 	this.accept = ".aac,.aiff,.m4a,.mp3,.ogg,.ra,.wav,.wma";
 
-	var audioObj = this;
+	var thisBlock = this;
+	var _private = {};
+	
+	this.destroy = function() {
+		return;
+	};
 
 	this.fetchDependencies = function() {
 		return null;
@@ -35,6 +40,8 @@ BengineConfig.extensibles.audio = new function Audio() {
 			mediatag.parentNode.load();
 		}
 	};
+	
+	this.runBlock = null;
 
 	this.saveContent = function(bid) {
 		/* replace() is for escaping backslashes and making relative path */
@@ -69,8 +76,4 @@ BengineConfig.extensibles.audio = new function Audio() {
 		}`;
 		return stylestr;
 	};
-	
-	this.f = {};
-	
-	this.g = {};
 };

@@ -5,12 +5,12 @@ BengineConfig.extensibles.xsvgs = new function Xsvgs() {
 	this.upload = false;
 	this.accept = ".svg";
 	
-	var emptyObject = function(obj) {
-		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
-			return true;
-		}
-		return false;
-	}
+	var thisBlock = this;
+	var _private = {};
+	
+	this.destroy = function() {
+		return;
+	};
 	
 	this.fetchDependencies = function() {
 		return null;
@@ -21,7 +21,7 @@ BengineConfig.extensibles.xsvgs = new function Xsvgs() {
 		xsvgs.setAttribute("class","xSvg");
 		xsvgs.setAttribute("data-link",bcontent['content']);
 
-		if(emptyObject(bcontent)) {
+		if(thisBlock.p.emptyObject(bcontent)) {
 			/// insert <svg> with data
 		}
 
@@ -35,6 +35,10 @@ BengineConfig.extensibles.xsvgs = new function Xsvgs() {
 		/// replace below with svgtag.innrHTML = success;
 		/// svgtag.setAttribute("data-link",success);
 	};
+	
+	this.runBlock = function(bid) {
+		return;
+	}
 
 	this.saveContent = function(bid) {
 		var svgstr = document.getElementById(bid).childNodes[0].getAttribute("data-link");
@@ -60,8 +64,4 @@ BengineConfig.extensibles.xsvgs = new function Xsvgs() {
 		}`;
 		return stylestr;
 	};
-	
-	this.f = {};
-	
-	this.g = {};
 };

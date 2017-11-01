@@ -1,7 +1,7 @@
-BengineConfig.extensibles.title = new function Title() {
-	this.type = "title";
-	this.name = "title";
-	this.category = "text";
+BengineConfig.extensibles.qstep = new function Qstep() {
+	this.type = "qstep";
+	this.name = "step";
+	this.category = "quiz";
 	this.upload = false;
 	this.accept = null;
 
@@ -20,10 +20,11 @@ BengineConfig.extensibles.title = new function Title() {
 
 	this.insertContent = function(block,bcontent) {
 		var str;
+		let explain = 'title="Put a variable here that resolves to a value between 0 and 1. It is the final student grade."'
 		if(!thisBlock.p.emptyObject(bcontent)) {
-			str = '<input type="text" class="xTit" maxlength="' + _private.blocklimit + '" value="' + bcontent['content'] + '">';
+			str = `<input type="text" class="xQstep" maxlength="${_private.blocklimit}" value="${bcontent['content']}" placeholder="Variable that must exist for next step to run.">`;
 		} else {
-			str = '<input type="text" class="xTit" maxlength="' + _private.blocklimit + '" placeholder="Title">';
+			str = `<input type="text" class="xQstep" maxlength="${_private.blocklimit}" placeholder="Variable that must exist for next step to run.">`;
 		}
 
 		block.innerHTML = str;
@@ -35,23 +36,21 @@ BengineConfig.extensibles.title = new function Title() {
 		/* nothing to do */
 	};
 	
-	this.runBlock = function(bid) {
-		/* nothing to do */
-	}
+	this.runBlock = null;
 
 	this.saveContent = function(bid) {
-		return {'content':document.getElementById(bid).children[0].value};
+		return {'content':document.getElementById(bid).children[0].value.split("\n")[0]};
 	};
 
 	this.showContent = function(block,bcontent) {
-		var str = '<div class="xTit-show">' + bcontent['content'] + '</div>';
+		var str = '<div class="xQstep-show">' + bcontent['content'] + '</div>';
 		block.innerHTML = str;
 
 		return block;
 	};
 
 	this.styleBlock = function() {
-		var stylestr = `.xTit {
+		var stylestr = `.xQstep {
 			display: inline-block;
 			width: 100%;
 			height: 32px;
@@ -69,7 +68,7 @@ BengineConfig.extensibles.title = new function Title() {
 			color: black;
 		}
 
-		.xTit-show {
+		.xQstep-show {
 			display: inline-block;
 			width: 100%;
 			height: auto;

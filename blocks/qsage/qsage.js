@@ -1,18 +1,16 @@
 BengineConfig.extensibles.sage = new function Sage() {
 	this.type = "sage";
 	this.name = "sagemath";
-	this.category = "code";
+	this.category = "quiz";
 	this.upload = false;
+	this.accept = null;
 
-	var sageObj = this;
-	var blocklimit = 2097;
-
-	var emptyObject = function(obj) {
-		if(Object.keys(obj).length === 0 && obj.constructor === Object) {
-			return true;
-		}
-		return false;
-	}
+	var thisBlock = this;
+	var _private = {};
+	
+	this.destroy = function() {
+		return;
+	};
 
 	this.fetchDependencies = function() {		
 		var cmjs = {
@@ -37,10 +35,12 @@ BengineConfig.extensibles.sage = new function Sage() {
 		var text = "";
 		var ns = "";
 		var vars = "";
-		if(BengineConfig.options.defaultText && emptyObject(bcontent)) {
-			text = 'This is a CodeMirror text editor. Use it to add & run your SageMath code.\n\n';
+		if(thisBlock.p.emptyObject(bcontent)) {
+			if(thisBlock.d.options.defaultText) {
+				text = 'This is a CodeMirror text editor. Use it to add & run your SageMath code.\n';
+			}
 		} else {
-			text = bcontent['code'];
+			text = bcontent['content'];
 			ns = bcontent['namespace'];
 			vars = bcontent['vars'];
 		}
@@ -74,12 +74,33 @@ BengineConfig.extensibles.sage = new function Sage() {
 	this.afterDOMinsert = function(bid,data) {
 		document.getElementById(bid).children[0].children[0].CodeMirror.refresh();
 	};
+	
+	this.runBlock = function(bid) {
+		var data = {};
+		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
+		data['namespace'] = document.getElementById(bid).children[1].value;
+		data['vars'] = document.getElementById(bid).children[2].value;
+		data['type'] = thisBlock.type;
+		data['bank'] = thisBlock.d.getPageBank();
+		data['pid'] = thisBlock.d.getPagePid();
+		data['version'] = thisBlock.d.getPageVersion();
+		
+		var promise = thisBlock.p.sendData('/code',data);
+		
+		promise.then(function(result) {
+			thisBlock.d.variables[data['namespace']] = result['data'][data['namespace']]['variables'];
+			alertify.log('complete','success');
+			console.log(thisBlock.d.variables);
+		},function(error) {
+			alertify.alert(error.error);
+		});
+	}
 
 	this.saveContent = function(bid) {
 		var blockContent = document.getElementById(bid).children[0].children[0].CodeMirror.getValue();
 		var blockNamespace = document.getElementById(bid).children[1].value;
 		var blockVars = document.getElementById(bid).children[2].value;
-		return {'code':blockContent,'namespace':blockNamespace,'vars':blockVars};
+		return {'content':blockContent,'namespace':blockNamespace,'vars':blockVars};
 	};
 
 	this.showContent = function(block,bcontent) {
@@ -138,7 +159,7 @@ BengineConfig.extensibles.sage = new function Sage() {
 	    	font-weight: 300;
 	    	color: black;
 	
-	        resize: none;
+	        resize: vertical;
 		}
 		`;
 		
@@ -146,8 +167,4 @@ BengineConfig.extensibles.sage = new function Sage() {
 		
 		return stylestr;
 	};
-
-	this.f = {};
-
-	this.g = {};
 };
