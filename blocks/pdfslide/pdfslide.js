@@ -1,4 +1,4 @@
-BengineConfig.extensibles.slide = new function Slide() {
+Bengine.extensibles.slide = new function Slide() {
 	this.type = "slide";
 	this.name = "slide";
 	this.category = "media";

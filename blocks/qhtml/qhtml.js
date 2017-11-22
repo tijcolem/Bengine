@@ -1,4 +1,4 @@
-BengineConfig.extensibles.qhtml = new function Qhtml() {
+Bengine.extensibles.qhtml = new function Qhtml() {
 	this.type = "qhtml";
 	this.name = "html";
 	this.category = "quiz";
@@ -50,7 +50,7 @@ BengineConfig.extensibles.qhtml = new function Qhtml() {
 				}	
 				finput = '<textarea name="' + input[1] + '" placeholder="' + parts[2] + '" style="width:100%" rows="' + rows + '"></textarea>';
 			} else {
-				alertify.log('Invalid Qengine shortcode type: ' + tparts[0],'error');
+				thisBlock.p.alerts.log('Invalid Qengine shortcode type: ' + tparts[0],'error');
 			}
 			
 			return finput;
@@ -106,13 +106,13 @@ BengineConfig.extensibles.qhtml = new function Qhtml() {
 			    let replacer;
 			    if(parts.length !== 3 && parts.length !== 2) {
 				    replacer = '';
-				    alertify.log('Invalid Qengine shortcode, must be: ~~~namespace.variable:TYPE[:extra]','error');
+				    thisBlock.p.alerts.log('Invalid Qengine shortcode, must be: ~~~namespace.variable:TYPE[:extra]','error');
 			    } else {
 				    try {
 					    replacer = _private.makeShortcode(parts);
 				    } catch(err) {
 					    replacer = '';
-					    alertify.log('Qengine variable not found: ' + matches[1],'error');
+					    thisBlock.p.alerts.log('Qengine variable not found: ' + matches[1],'error');
 				    }
 			    }
 			    nstr = nstr.replace(matches[0],replacer);
@@ -143,7 +143,7 @@ BengineConfig.extensibles.qhtml = new function Qhtml() {
 				
 				let parts = name.split(/\.(.+)/).filter(function(el) {return el.length != 0});
 				if(parts.length !== 2) {
-					alertify.log('Invalid variable: ' + name + ', must be: namespace.variable');
+					thisBlock.p.alerts.log('Invalid variable: ' + name + ', must be: namespace.variable');
 					continue;
 				}
 				
@@ -158,7 +158,7 @@ BengineConfig.extensibles.qhtml = new function Qhtml() {
 				}
 			}
 			
-			alertify.log('complete','success');
+			thisBlock.p.alerts.log('complete','success');
 			console.log(thisBlock.d.variables);
 			
 			return null;
@@ -168,29 +168,45 @@ BengineConfig.extensibles.qhtml = new function Qhtml() {
 		qhtmlBlock.setAttribute('class','xQhtml');
 		qhtmlBlock.contentEditable = true;
 		
+		var blockNS = document.createElement("input");
+		blockNS.setAttribute("type","text");
+		blockNS.setAttribute("class","bengine-x-ns-cond col col-50");
+		blockNS.setAttribute("placeholder","Block Namespace");
+		
+		var blockCond = document.createElement("input");
+		blockCond.setAttribute("type","text");
+		blockCond.setAttribute("class","bengine-x-ns-cond col col-50");
+		blockCond.setAttribute("placeholder","Block Conditional (optional)");
+		
 		if(!thisBlock.p.emptyObject(bcontent)) {
 			qhtmlBlock.innerText = bcontent['content'];
+			blockNS.value = bcontent['namespace'];
+			blockCond.value = bcontent['conditional'];
 		} else {
 			qhtmlBlock.innerText = '<p>Place HTML Content Here</p>';
 		}
 
 		block.appendChild(qhtmlpreview);
+		block.appendChild(blockNS);
+		block.appendChild(blockCond);
 		block.appendChild(qhtmlBlock);
 
 		return block;
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		_private.renderHTML(document.getElementById(bid).childNodes[1]);
+		_private.renderHTML(document.getElementById(bid).childNodes[3]);
 	};
 	
 	this.runBlock = function(bid) {
-		_private.renderHTML(document.getElementById(bid).childNodes[1]);
+		_private.renderHTML(document.getElementById(bid).childNodes[3]);
 	}
 
 	this.saveContent = function(bid) {
-		let html = document.getElementById(bid).children[1].innerHTML;
-		return {'content':html}; // ? thisBlock.p.decodeHTML(html)
+		let namespace = document.getElementById(bid).children[1].value;
+		let conditional = document.getElementById(bid).children[2].value;
+		let html = document.getElementById(bid).children[3].innerHTML;
+		return {'content':html,'namespace':namespace,'conditional':conditional}; // ? thisBlock.p.decodeHTML(html)
 	};
 
 	this.showContent = function(block,bcontent) {

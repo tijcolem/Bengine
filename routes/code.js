@@ -1,13 +1,19 @@
 exports.process = function(request,response) {
-	var orequest = require('request');
-	
-	var result = {msg:"",data:{}};
+	const orequest = require('request');
+	const rest = require('../lib/rest.js');
 
 	var body = '';
     request.on('data',function(data) {
         body += data;
+        
+        if (body.length > 1e6) {
+			request.connection.destroy();
+			rest.respond(response,413,'Body Is Too Large',{});
+			return;
+		}
     });
 
+	var rData = {};
     request.on('end',function() {
 	    /*
 		    json should contain:
@@ -25,10 +31,7 @@ exports.process = function(request,response) {
 	    try {
 	    	serviceURL = request.app.get("services")[code.type];
 	    } catch(err) {
-		    result.msg = 'err';
-			result.data.error = String(error);
-			response.setHeader('content-type','application/json');
-			response.end(JSON.stringify(result));
+		    rest.respond(response,400,String(error),{});
 			return;
 	    }
 	    
@@ -42,15 +45,19 @@ exports.process = function(request,response) {
 		    body: requestData,
 		    json: true
 		}, function (error, oresponse, obody) {
-			var rnow = true; // if resources are requested, set to false to send response data after promises
 			if(error) {
-				result.msg = 'err';
-				result.data.error = String(error);
+				rest.respond(response,400,String(error),{});
+				return;
 			} else if (oresponse.statusCode !== 200) {
-				result.msg = 'err';
-				result.data.error = 'service return status code: ' + oresponse.statusCode;
+				rest.respond(response,400,'service return status code: ' + oresponse.statusCode,{});
+				return;
 			} else {
-				result.data[code['namespace']] = {'variables':{},'resources':[]};
+				if('error' in obody) {
+					rest.respond(response,400,obody.error[0],{});
+					return;
+				}
+				
+				rData[code['namespace']] = {'variables':{},'resources':[]};
 				
 				/* grab variables and resource names */
 				var resourceQueue = [];
@@ -74,7 +81,7 @@ exports.process = function(request,response) {
 						});
 						resourceQueue.push(rpromise);
 					} else {
-						result.data[code['namespace']]['variables'][key] = obody[key][0];
+						rData[code['namespace']]['variables'][key] = obody[key][0];
 					}
 				}
 				
@@ -82,7 +89,6 @@ exports.process = function(request,response) {
 				if(resourceQueue.length > 0) {
 					const mime = require('mime');
 					const fs = require('fs');
-					rnow = false;
 					Promise.all(resourceQueue).then(values => {
 						writeQueue = [];
 						values.forEach(function(fdata) {							
@@ -99,35 +105,21 @@ exports.process = function(request,response) {
 							writeQueue.push(wpromise);
 
 							let path = ["/content/",code.bank,'/',code.pid,'/',code.version,'/',fdata['file']].join('');
-							result.data[code['namespace']]['variables'][fdata['name']] = path;
+							rData[code['namespace']]['variables'][fdata['name']] = path;
 						});
 						
 						Promise.all(writeQueue).then(values => {
-							result.msg = 'done';
-							response.setHeader('content-type','application/json');
-							response.end(JSON.stringify(result));
+							rest.respond(response,200,'done',rData);
 						}).catch(error => {
-							result.msg = 'err';
-							result.data.error = 'Error writing requested resource: ' + String(error);
-							response.setHeader('content-type','application/json');
-							response.end(JSON.stringify(result));
+							rest.respond(response,400,'Error writing requested resource: ' + String(error),rData);
 						});
 					}).catch(error => {
-						result.msg = 'err';
-						result.data.error = 'Error retrieving requested resource: ' + String(error);
-						response.setHeader('content-type','application/json');
-						response.end(JSON.stringify(result));
+						rest.respond(response,400,'Error retrieving requested resource: ' + String(error),rData);
 					});
+				} else {
+					rest.respond(response,200,'done',rData);
 				}
-				
-				result.msg = 'done';
-	        }
-	        
-	        if(rnow) {
-		        response.setHeader('content-type','application/json');
-				response.end(JSON.stringify(result));
-	        }
-	        
+	        }	        
 	    });
 	});
 };

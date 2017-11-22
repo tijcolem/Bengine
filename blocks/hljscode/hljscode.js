@@ -1,4 +1,4 @@
-BengineConfig.extensibles.xcode = new function Xcode() {
+Bengine.extensibles.xcode = new function Xcode() {
 	this.type = "xcode";
 	this.name = "hljs";
 	this.category = "text";

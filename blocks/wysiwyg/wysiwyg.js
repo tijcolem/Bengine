@@ -1,4 +1,4 @@
-BengineConfig.extensibles.xtext = new function Xtext() {
+Bengine.extensibles.xtext = new function Xtext() {
 	this.type = "xtext";
 	this.name = "text";
 	this.category = "text";
@@ -71,11 +71,11 @@ BengineConfig.extensibles.xtext = new function Xtext() {
 						} else if (str.indexOf("http://") === 0 || str.indexOf("https://") === 0) {
 							iframe.contentDocument.execCommand('createLink',false,str);
 						} else {
-							alertify.log("Not A Valid Link!","error");
+							thisBlock.p.alerts.log("Not A Valid Link!","error");
 						}
 					} else { /* cancel */ }
 				}
-				alertify.prompt('Enter the link: ',callback,'http://');
+				thisBlock.p.alerts.prompt('Enter the link: ',callback,'http://');
 			}
 
 			/* Command + letter, works for these, but include for consistency */

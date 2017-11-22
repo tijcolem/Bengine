@@ -5,6 +5,8 @@ exports.process = function(request,response) {
     request.on('data',function(data) {
         body += data;
     });
+    
+    // mp3 mp4 jpg
 
     request.on('end',function() {
 		result.msg = 'success';

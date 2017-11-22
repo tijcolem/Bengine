@@ -1,4 +1,4 @@
-BengineConfig.extensibles.audio = new function Audio() {
+Bengine.extensibles.audio = new function Audio() {
 	this.type = "audio";
 	this.name = "audio";
 	this.category = "media";

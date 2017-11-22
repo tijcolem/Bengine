@@ -1,4 +1,4 @@
-BengineConfig.extensibles.title = new function Title() {
+Bengine.extensibles.title = new function Title() {
 	this.type = "title";
 	this.name = "title";
 	this.category = "text";

@@ -1,4 +1,4 @@
-BengineConfig.extensibles.mcode = new function Mcode() {
+Bengine.extensibles.mcode = new function Mcode() {
 	this.type = "mcode";
 	this.name = "codemirror";
 	this.category = "text";
@@ -18,7 +18,7 @@ BengineConfig.extensibles.mcode = new function Mcode() {
 		}
 		
 		if(_private.availableModes.indexOf(mode) < 0) {
-			alertify.alert("That Mode Is Not Available");
+			thisBlock.p.alerts.alert("That Mode Is Not Available");
 			return;
 		}
 		
@@ -45,7 +45,7 @@ BengineConfig.extensibles.mcode = new function Mcode() {
 		setTimeout(function() {
 			block.children[1].children[0].CodeMirror.setOption("mode",mode);
 			block.children[1].children[0].CodeMirror.refresh();
-			alertify.log("Mode set to: <b>" + block.children[1].children[0].CodeMirror.getMode().name + "</b>","success");
+			thisBlock.p.alerts.log("Mode set to: <b>" + block.children[1].children[0].CodeMirror.getMode().name + "</b>","success");
 		}, 1000);
 	}
 	

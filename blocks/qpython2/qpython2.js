@@ -1,6 +1,6 @@
-BengineConfig.extensibles.python2 = new function Python2() {
-	this.type = "python2";
-	this.name = "python";
+Bengine.extensibles.python = new function Python2() {
+	this.type = "python";
+	this.name = "python2.7";
 	this.category = "quiz";
 	this.upload = false;
 	this.accept = null;
@@ -34,6 +34,7 @@ BengineConfig.extensibles.python2 = new function Python2() {
 		
 		var text = "";
 		var ns = "";
+		var cond = "";
 		var vars = "";
 		if(thisBlock.p.emptyObject(bcontent)) {
 			if(thisBlock.d.options.defaultText) {
@@ -42,6 +43,7 @@ BengineConfig.extensibles.python2 = new function Python2() {
 		} else {
 			text = bcontent['content'];
 			ns = bcontent['namespace'];
+			cond = bcontent['conditional'];
 			vars = bcontent['vars'];
 		}
 		
@@ -55,9 +57,15 @@ BengineConfig.extensibles.python2 = new function Python2() {
 		
 		var pyNS = document.createElement("input");
 		pyNS.setAttribute("type","text");
-		pyNS.setAttribute("class","xPyx-NS");
-		pyNS.setAttribute("placeholder","Enter The Namespace For This Code Block.");
+		pyNS.setAttribute("class","bengine-x-ns-cond col col-50");
+		pyNS.setAttribute("placeholder","Block Namespace");
 		pyNS.setAttribute("value",ns);
+		
+		var pyCond = document.createElement("input");
+		pyCond.setAttribute("type","text");
+		pyCond.setAttribute("class","bengine-x-ns-cond col col-50");
+		pyCond.setAttribute("placeholder","Block Conditional (optional)");
+		pyCond.setAttribute("value",cond);
 		
 		var pyVars = document.createElement("textarea");
 		pyVars.setAttribute("class","xPyx-Vars");
@@ -66,6 +74,7 @@ BengineConfig.extensibles.python2 = new function Python2() {
 
 		block.appendChild(pyBlock);
 		block.appendChild(pyNS);
+		block.appendChild(pyCond);
 		block.appendChild(pyVars);
 
 		return block;
@@ -78,8 +87,9 @@ BengineConfig.extensibles.python2 = new function Python2() {
 	this.runBlock = function(bid) {
 		var data = {};
 		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
-		data['namespace'] = document.getElementById(bid).children[1].value;
-		data['vars'] = document.getElementById(bid).children[2].value;
+		data['namespace'] = document.getElementById(bid).children[1].value.trim();
+		data['conditional'] = document.getElementById(bid).children[2].value.trim();
+		data['vars'] = document.getElementById(bid).children[3].value;
 		data['type'] = thisBlock.type;
 		data['bank'] = thisBlock.d.getPageBank();
 		data['pid'] = thisBlock.d.getPagePid();
@@ -89,18 +99,20 @@ BengineConfig.extensibles.python2 = new function Python2() {
 		
 		promise.then(function(result) {
 			thisBlock.d.variables[data['namespace']] = result['data'][data['namespace']]['variables'];
-			alertify.log('complete','success');
+			thisBlock.p.alerts.log('complete','success');
 			console.log(thisBlock.d.variables);
-		},function(error) {
-			alertify.alert(error.error);
+		},function(result) {
+			thisBlock.p.alerts.alert("Error. Status: " + result.status + " Message: " + result.msg);
 		});
 	}
 
 	this.saveContent = function(bid) {
 		var blockContent = document.getElementById(bid).children[0].children[0].CodeMirror.getValue();
 		var blockNamespace = document.getElementById(bid).children[1].value;
-		var blockVars = document.getElementById(bid).children[2].value;
-		return {'content':blockContent,'namespace':blockNamespace,'vars':blockVars};
+		var blockConditional = document.getElementById(bid).children[2].value;
+		var blockVars = document.getElementById(bid).children[3].value;
+		
+		return {'content':blockContent,'namespace':blockNamespace,'conditional':blockConditional,'vars':blockVars};
 	};
 
 	this.showContent = function(block,bcontent) {
@@ -128,17 +140,6 @@ BengineConfig.extensibles.python2 = new function Python2() {
 			border: 1px solid black;
 			border-radius: 2px;
 			background-color: white;
-		}
-		
-		.xPyx-NS {
-			width: 100%;
-			padding: 5px 8px;
-			border: 1px solid black;
-			
-			display: inline-block;
-			box-sizing: border-box;
-			
-			font-size: 0.9em;
 		}
 		
 		.xPyx-Vars {

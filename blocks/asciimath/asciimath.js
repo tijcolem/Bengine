@@ -1,4 +1,4 @@
-BengineConfig.extensibles.xmath = new function Xmath() {
+Bengine.extensibles.xmath = new function Xmath() {
 	this.type = "xmath";
 	this.name = "asciimath";
 	this.category = "text";

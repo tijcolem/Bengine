@@ -93,7 +93,7 @@ bid - the block id, so you can getElementById
 this.runBlock = function(bid) {
 	// a 'Run Block' button is added to every block. it meant for updating a preview div
 	// you can set this to 'null' to remove the button
-	alertify.log('nothing to do...','success');
+	thisBlock.p.alerts.log('nothing to do...','success');
 };
 
 /**************************************
@@ -214,7 +214,7 @@ function loadCustomBlock() {
         var BlockFunction = eval('(' + code + ')');
     } catch (e) {
         if (e instanceof SyntaxError) {
-            alertify.alert(e.message);
+            window.alert(e.message);
         }
         return;
     }

@@ -1,4 +1,4 @@
-BengineConfig.extensibles.latex = new function Latex() {
+Bengine.extensibles.latex = new function Latex() {
 	this.type = "latex";
 	this.name = "latex";
 	this.category = "text";

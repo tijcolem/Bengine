@@ -1,6 +1,5 @@
 
 [![Build Status](https://travis-ci.org/efossas/Bengine.svg?branch=master)](https://travis-ci.org/efossas/Bengine)
-[![Stories in Ready](https://badge.waffle.io/efossas/Bengine.png?label=ready&title=Ready)](http://waffle.io/efossas/Bengine)
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/BlockEngine/Lobby)
 
 # Bengine

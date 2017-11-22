@@ -1,4 +1,4 @@
-BengineConfig.extensibles.xsvgs = new function Xsvgs() {
+Bengine.extensibles.xsvgs = new function Xsvgs() {
 	this.type = "xsvgs";
 	this.name = "svg";
 	this.category = "media";

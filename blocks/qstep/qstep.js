@@ -1,4 +1,4 @@
-BengineConfig.extensibles.qstep = new function Qstep() {
+Bengine.extensibles.qstep = new function Qstep() {
 	this.type = "qstep";
 	this.name = "step";
 	this.category = "quiz";

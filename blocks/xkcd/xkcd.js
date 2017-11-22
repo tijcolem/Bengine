@@ -1,4 +1,4 @@
-BengineConfig.extensibles.xkcdi = new function Xkcdi() {
+Bengine.extensibles.xkcdi = new function Xkcdi() {
 	this.type = "xkcdi";
 	this.name = "xkcd";
 	this.category = "media";
@@ -27,7 +27,7 @@ BengineConfig.extensibles.xkcdi = new function Xkcdi() {
 				if(xmlhttp.status === 200) {
 					console.log(xmlhttp.responseText);
 				} else {
-					alertify.log("Error Retrieving XKCD Comic","error");
+					thisBlock.p.alerts.log("Error Retrieving XKCD Comic","error");
 				}
 	        }
 	    };

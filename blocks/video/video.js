@@ -1,4 +1,4 @@
-BengineConfig.extensibles.video = new function Video() {
+Bengine.extensibles.video = new function Video() {
 	this.type = "video";
 	this.name = "video";
 	this.category = "media";

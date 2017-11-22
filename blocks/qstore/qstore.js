@@ -1,4 +1,4 @@
-BengineConfig.extensibles.qstore = new function Qstore() {
+Bengine.extensibles.qstore = new function Qstore() {
 	this.type = "qstore";
 	this.name = "store";
 	this.category = "quiz";
@@ -20,12 +20,26 @@ BengineConfig.extensibles.qstore = new function Qstore() {
 		var storeVars = document.createElement("textarea");
 		storeVars.setAttribute("class","xQst");
 		
+		var blockNS = document.createElement("input");
+		blockNS.setAttribute("type","text");
+		blockNS.setAttribute("class","bengine-x-ns-cond col col-50");
+		blockNS.setAttribute("placeholder","Block Namespace");
+		
+		var blockCond = document.createElement("input");
+		blockCond.setAttribute("type","text");
+		blockCond.setAttribute("class","bengine-x-ns-cond col col-50");
+		blockCond.setAttribute("placeholder","Block Conditional (optional)");
+		
 		if(!thisBlock.p.emptyObject(bcontent)) {
 			storeVars.setAttribute("value",bcontent['content']);
+			blockNS.value = bcontent['namespace'];
+			blockCond.value = bcontent['conditional'];
 		}
 		
 		storeVars.setAttribute("placeholder","Comma or newline separated variables you want to keep for the next quiz step.\nPrepend with 'perm' to keep variable permanently. Prepend with 'temp' to keep for just one step. Example: temp.namespace.variable");
 
+		block.appendChild(blockNS);
+		block.appendChild(blockCond);
 		block.appendChild(storeVars);
 
 		return block;
@@ -38,7 +52,10 @@ BengineConfig.extensibles.qstore = new function Qstore() {
 	this.runBlock = null;
 
 	this.saveContent = function(bid) {
-		return {'content':document.getElementById(bid).children[0].value};
+		let namespace = document.getElementById(bid).children[0].value.trim();
+		let conditional = document.getElementById(bid).children[1].value.trim();
+		let content = document.getElementById(bid).children[2].value;
+		return {'content':content,'namespace':namespace,'conditional':conditional};
 	};
 
 	this.showContent = function(block,bcontent) {

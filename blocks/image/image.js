@@ -1,4 +1,4 @@
-BengineConfig.extensibles.image = new function Image() {
+Bengine.extensibles.image = new function Image() {
 	this.type = "image";
 	this.name = "image";
 	this.category = "media";

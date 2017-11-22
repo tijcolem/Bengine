@@ -1,4 +1,4 @@
-BengineConfig.extensibles.files = new function Files() {
+Bengine.extensibles.files = new function Files() {
 	this.type = "files";
 	this.name = "files";
 	this.category = "quiz";
@@ -27,11 +27,11 @@ BengineConfig.extensibles.files = new function Files() {
 			let cnt = Object.keys(result.data.files).length;
 			if(cnt > 0) {
 				thisBlock.d.variables[namespace] = result.data.files;
-				alertify.log('complete','success');
+				thisBlock.p.alerts.log('complete','success');
 				console.log(thisBlock.d.variables);
 			}
 		},function(error) {
-			alertify.alert(error.error);
+			thisBlock.p.alerts.alert(error.msg);
 		});
 	};
 	
@@ -46,8 +46,13 @@ BengineConfig.extensibles.files = new function Files() {
 	this.insertContent = function(block,bcontent) {
 		var filesNS = document.createElement("input");
 		filesNS.setAttribute("type","text");
-		filesNS.setAttribute("class","xFiles-NS");
+		filesNS.setAttribute("class","bengine-x-ns-cond col col-50");
 		filesNS.setAttribute("placeholder","Enter The Namespace For This Files Block.");
+		
+		var blockCond = document.createElement("input");
+		blockCond.setAttribute("type","text");
+		blockCond.setAttribute("class","bengine-x-ns-cond col col-50");
+		blockCond.setAttribute("placeholder","Block Conditional (optional)");
 		
 		var filesBlock = document.createElement('textarea');
 		filesBlock.setAttribute('class','xFiles');
@@ -56,9 +61,11 @@ BengineConfig.extensibles.files = new function Files() {
 		if(!thisBlock.p.emptyObject(bcontent)) {
 			filesBlock.value = bcontent['content'];
 			filesNS.value = bcontent['namespace'];
+			blockCond.value = bcontent['conditional'];
 		}
 		
 		block.appendChild(filesNS);
+		block.appendChild(blockCond);
 		block.appendChild(filesBlock);
 
 		return block;
@@ -73,7 +80,10 @@ BengineConfig.extensibles.files = new function Files() {
 	}
 
 	this.saveContent = function(bid) {
-		return {'content':document.getElementById(bid).children[1].value,'namespace':document.getElementById(bid).children[0].value};
+		var namespace = document.getElementById(bid).children[0].value.trim();
+		var conditional = document.getElementById(bid).children[0].value.trim();
+		var content= document.getElementById(bid).children[2].value;
+		return {'content':content,'namespace':namespace,'conditional':conditional};
 	};
 
 	this.showContent = function(block,bcontent) {
@@ -99,17 +109,6 @@ BengineConfig.extensibles.files = new function Files() {
 	    	font-size: 1em;
 	    	font-weight: 300;
 	    	color: black;
-		}
-		
-		.xFiles-NS {
-			width: 100%;
-			padding: 5px 8px;
-			border: 1px solid black;
-			
-			display: inline-block;
-			box-sizing: border-box;
-			
-			font-size: 0.9em;
 		}`;
 		return stylestr;
 	};

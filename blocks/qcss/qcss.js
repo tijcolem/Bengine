@@ -1,4 +1,4 @@
-BengineConfig.extensibles.qcss = new function Qcss() {
+Bengine.extensibles.qcss = new function Qcss() {
 	this.type = "qcss";
 	this.name = "css";
 	this.category = "quiz";
@@ -42,16 +42,30 @@ BengineConfig.extensibles.qcss = new function Qcss() {
 		var qcssBlock = document.createElement('div');
 		qcssBlock.setAttribute('class','xQcss');
 		
+		var blockNS = document.createElement("input");
+		blockNS.setAttribute("type","text");
+		blockNS.setAttribute("class","bengine-x-ns-cond col col-50");
+		blockNS.setAttribute("placeholder","Block Namespace");
+		
+		var blockCond = document.createElement("input");
+		blockCond.setAttribute("type","text");
+		blockCond.setAttribute("class","bengine-x-ns-cond col col-50");
+		blockCond.setAttribute("placeholder","Block Conditional (optional)");
+		
 		let sid = thisBlock.p.createUUID();
 		qcssBlock.setAttribute('data-sid',sid);
 		qcssBlock.contentEditable = true;
 		
 		if(!thisBlock.p.emptyObject(bcontent)) {
 			qcssBlock.innerText = bcontent['content'];
+			blockNS.setAttribute("value",bcontent['namespace']);
+			blockCond.setAttribute("value",bcontent['conditional']);
 		} else {
 			qcssBlock.innerText = '.place-css-here { background-color:white; }';
 		}
 
+		block.appendChild(blockNS);
+		block.appendChild(blockCond);
 		block.appendChild(qcssBlock);
 
 		return block;
@@ -69,7 +83,10 @@ BengineConfig.extensibles.qcss = new function Qcss() {
 	}
 
 	this.saveContent = function(bid) {
-		return {'content':document.getElementById(bid).children[0].innerHTML};
+		let namespace = document.getElementById(bid).children[0].value.trim();
+		let conditional = document.getElementById(bid).children[1].value.trim();
+		let content = document.getElementById(bid).children[2].innerHTML;
+		return {'content':content,'namespace':namespace,'conditional':conditional};
 	};
 
 	this.showContent = function(block,bcontent) {
