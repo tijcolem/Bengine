@@ -178,12 +178,16 @@ Bengine.extensibles.xtext = new function Xtext() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		/* grab the block iframe that was just made */
-		var blocki = document.getElementById(bid).childNodes[0];
-		var blockDoc = blocki.contentDocument;
-
-		/* make iframe editable */
-		blockDoc.designMode = "on";
+		try {
+			/* grab the block iframe that was just made */
+			var blocki = document.getElementById(bid).childNodes[0];
+			var blockDoc = blocki.contentDocument;
+	
+			/* make iframe editable */
+			blockDoc.designMode = "on";
+		} catch(err) {
+			// pass
+		}
 	};
 	
 	this.runBlock = null;

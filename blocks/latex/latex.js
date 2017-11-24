@@ -31,7 +31,8 @@ Bengine.extensibles.latex = new function Latex() {
 			inner: '',
 			integrity: '',
 			source: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML',
-			type: 'text/javascript'
+			type: 'text/javascript',
+			wait: 'MathJax'
 		};
 		var mathjaxConfig = {
 			inner: `MathJax.Hub.Config({tex2jax:{processClass:'latexImage',ignoreClass:'body'},messageStyle:'none'});`,

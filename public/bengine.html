@@ -42,7 +42,7 @@
 			var extensions = { alerts:alertify, display:BengineDefaultDisplay };
 			
 			var IE = new Bengine({},extensions);				
-			IE.loadBlocksEdit("content",["bank","pid","1.0"],[]); // engine dom id, [bank,pid,version], [block data]
+			IE.loadBlocksEdit("content",'bank/pid/1.0'); // engine dom id, path to assets
 				
 			window.IE = IE; // for debugging
 		</script>

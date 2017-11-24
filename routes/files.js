@@ -20,18 +20,12 @@ exports.process = function(request,response) {
     request.on('end',function() {
 	    /*
 		    json should contain:
-		    	fdata.bank			- name of bank (could be user)
 		    	fdata.files			- array of files to retrieve
 		    	fdata.namespace		- the namespace to put files under
-		    	fdata.pid			- page id
-		    	fdata.version		- any variables to store from the run
-		    	
-		    	files are stored like: bank/pid/version
-		    		* they can really be interpreted any way you like, for example:
-		    			arithmetic/addition/1.1
-		    			bob_the_user/bobs_awesome_pages/bobs_first_awesome_page
+		    	fdata.fpath			- path to file assets
 		*/
 	    var fdata = JSON.parse(body);
+	    fdata.fpath = fdata.fpath.replace(/^\/(.+)?\/$/g,"$1");
 	    
 	    /* just send back the path to the files, check they exist though */
 	    rData['files'] = {};
@@ -43,7 +37,7 @@ exports.process = function(request,response) {
 				var fname = fparts[fparts.length-1];
 				var findex = fname;
 				
-				var dirs = ['/content/',fdata.bank,'/',fdata.pid,'/',fdata.version,'/assets/'].join('');
+				var dirs = ['/content/',fdata.fpath,'/assets/'].join('');
 				var fpath = dirs + fname;
 				
 				// create asset directory if not exists
@@ -83,7 +77,7 @@ exports.process = function(request,response) {
 				});
 			} else {
 				var findex = element;
-			    var fpath = ['/content/',fdata.bank,'/',fdata.pid,'/',fdata.version,'/assets/',element].join('');
+			    var fpath = ['/content/',fdata.fpath,'/assets/',element].join('');
 			    var cpromise = new Promise((resolve,reject) => {
 				    fs.stat('./public' + fpath,function(err,stat) {
 					    if(err == null) {

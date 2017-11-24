@@ -69,7 +69,8 @@ Bengine.extensibles.xcode = new function Xcode() {
 			inner: '',
 			integrity: '',
 			source: '//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/highlight.min.js',
-			type: 'text/javascript'
+			type: 'text/javascript',
+			wait: 'hljs'
 		};
 		
 		return [highlightjs];

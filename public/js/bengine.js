@@ -18,7 +18,7 @@
 		categoryCounts			number of extensibles in each category
 		extensibles				holds the extensible objects
 		engineID				DOM id of div used to show blocks
-		pageIDs					Page ids used for saving data & media
+		pagePath				Directory location for file saves and assets
 		
 		blockMethod				methods for handling block creation/deletion
 		datahandler				methods for handling AJAX back-end data calls
@@ -58,16 +58,11 @@ function Bengine(options,extensions) {
 		quiz:0
 	};
 	_private.engineID = '';
-	_private.pageIDs = {
-		bank:'',
-		pid:'',
-		version:''
-	}
+	_private.pagePath = '';
 	
 	// qengine blocks use these
-	_public.getPageBank = function() { return _private.pageIDs.bank; }
-	_public.getPagePid = function() { return _private.pageIDs.pid; }
-	_public.getPageVersion = function() { return _private.pageIDs.version; }
+	_public.getEngineID = function() { return _private.engineID; }
+	_public.getPagePath = function() { return _private.pagePath; }
 	
 	// initialize objects that will hold methods
 	_private.blockMethod = {};
@@ -325,6 +320,33 @@ function Bengine(options,extensions) {
 		return url;
 	};
 	
+	_private.helper.retrieveResource = function(path) {
+		var promise = new Promise(function(resolve,reject) {
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.open("GET",_private.helper.createURL(path),true);
+			xmlhttp.onreadystatechange = function() {
+		        if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+			        switch(xmlhttp.status) {
+				        case 200:
+				        	resolve({msg:'Success',status:200,data:{file:xmlhttp.responseText}}); break;
+				        case 404:
+				        	reject({msg:'File Not Found',status:404,data:{}}); break;
+				        default:
+				        	reject({msg:'Unknown Error',status:xmlhttp.status,data:{}});
+			        }
+		        }
+		    };
+		
+			xmlhttp.send();
+		})
+		
+		return promise;
+	}
+	
+	_private.helper.sleep = function(ms) {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+	
 	/*** Section: API Block Methods ***/
 	
 	_private.extAPI.alerts = _private.alerts;
@@ -428,17 +450,13 @@ function Bengine(options,extensions) {
 	/*** Section: Public Methods ***/
 	
 	/*
-		domID (string) - element id in DOM, Bengine blocks are displayed here
 		blockData (array)[string,string,...] - block type & block content, repeated for every block
 	
 		(number) - block count
 	*/
-	_public.loadBlocksShow = function(domid,blockData) {
-		/* set object global, used to separate one engine from another */
-		_private.engineID = domid;
-	
+	_private.loadBlocksShowReady = async function(blockData) {	
 		/* domid div */
-		var mainDiv = document.getElementById(domid);
+		var mainDiv = document.getElementById(_private.engineID);
 	
 		if(mainDiv === 'undefined') {
 			return -1;
@@ -463,7 +481,19 @@ function Bengine(options,extensions) {
 		_private.blockMethod.blockStyle();
 		
 		/* append block dependencies */
-		_private.blockMethod.blockScripts();
+		var waiting = _private.blockMethod.blockScripts();
+		
+		for(let w = 0; w < waiting.length; w++) {
+			var ctry = 0;
+			var tries = 4;
+			while(typeof window[waiting[w]] == "undefined") {
+				if(ctry > tries) {
+					console.log('Reached wait limit for script: ' + waiting[w]); break;
+				}
+				await _private.helper.sleep(100); // we can't continue until dependencies are loaded
+				ctry++;
+			}
+		}
 	
 		var count = 0;
 		var i = 1;
@@ -492,6 +522,9 @@ function Bengine(options,extensions) {
 			/* append group to blocks div */
 			group.appendChild(retblock);
 			blocksdiv.appendChild(group);
+			
+			/* do any rendering the block needs */
+			_private.extensibles[blockData[count]].afterDOMinsert('bengine-a-' + _private.engineID + '-' + i,null);
 	
 			count += 2;
 			i++;
@@ -551,51 +584,71 @@ function Bengine(options,extensions) {
 			singleViewBtnsDiv.appendChild(currentSingle);
 			enginediv.appendChild(singleViewBtnsDiv);
 		}
-	
-		return i;
 	};
-	this.loadBlocksShow = _public.loadBlocksShow;
 	
 	/*
 		engineID (string) - element id in DOM, Bengine blocks are displayed here
-		pageIDs (array)[string,string,string] - page bank, page id, page version : like ['arithmetic','addition','1.0']
-		pageData (array)[string,string,...] -  block type & block content, repeated for every block
-	
-		(number) - block count
+		pagePath (string) - directory location for file saves and assets
 	*/
-	_private.loadBlocksEditReady = function(engineID,pageIDs,pageData) {
+	_public.loadBlocksShow = function(engineID,pagePath,pageData = null) {
 		/* validate data */
 		try {
 			if(typeof engineID !== 'string') throw Error('Invalid engineID passed to blockEngineStart()');
-			if(!Array.isArray(pageIDs)) throw Error('pageIDs must be array passed to blockEngineStart()');
-			if(pageIDs.length !== 3) throw Error('Invalid number of pageID elements passed to blockEngineStart()');
-			if(!Array.isArray(pageData)) throw Error('pageData must be array passed to blockEngineStart()');
-			pageIDs.forEach(function(element) { 
-				if(typeof element !== 'string') { 
-					throw Error('Invalid pageID element passed to blockEngineStart()'); 
-				}
-			});
+			if(typeof pagePath !== 'string') throw Error('Invalid pagePath passed to blockEngineStart()');
+			if(pageData !== null && !Array.isArray(pageData)) throw Error('pageData must be array passed to blockEngineStart()');
 		} catch(err) {
 			_private.alerts.alert(err.message);
 			return -1;
 		}
 		
+		pagePath = pagePath.replace(/^\/(.+)?\/$/g,"$1");
+		
 		/* initialize parameters */
 		_private.engineID = engineID;
-	
-		_private.pageIDs = {
-			bank:pageIDs[0],
-			pid:pageIDs[1],
-			version:pageIDs[2]
-		}
+		_private.pagePath = pagePath;
 		
+		if(pageData === null) {
+			var fpromise = _private.helper.retrieveResource("/content/" + pagePath + "/bengine.json");
+			fpromise.then(function(result) {
+				dataObj = JSON.parse(result.data.file);
+				rpageData = [];
+				for(let i = 0; i < dataObj.types.length; i++) {
+					rpageData.push(dataObj.types[i]);
+					rpageData.push(dataObj.content[i]);
+				}
+				if(document.readyState === "complete") {
+					_private.loadBlocksShowReady(rpageData);
+				} else {
+					window.addEventListener('DOMContentLoaded', function() {
+						_private.loadBlocksShowReady(rpageData);
+					});
+				}
+			},function(error) {
+				_private.alerts.alert("Error: " + error.msg + " Status: " + error.status);
+			});
+		} else {
+			if(document.readyState === "complete") {
+				_private.loadBlocksShowReady(pageData);
+			} else {
+				window.addEventListener('DOMContentLoaded', function() {
+					_private.loadBlocksShowReady(pageData);
+				});
+			}
+		}
+	};
+	this.loadBlocksShow = _public.loadBlocksShow;
+	
+	/*
+		pageData (array)[string,string,...] -  optional, for loading data directly. block type & block content, repeated for every block
+	*/
+	_private.loadBlocksEditReady = async function(pageData) {
 		_private.status = 1;
 		
 		/* initialize display */
 		_private.display = new _private.displayClass(_private.engineID,_private.datahandler);
 	
 		/* check that div to place Bengine in exists */
-		var mainDiv = document.getElementById(engineID);
+		var mainDiv = document.getElementById(_private.engineID);
 	
 		if(mainDiv === null) {
 			return -1;
@@ -620,8 +673,20 @@ function Bengine(options,extensions) {
 		_private.blockMethod.blockStyle();
 		
 		/* append block dependencies */
-		_private.blockMethod.blockScripts();
-	
+		var waiting = _private.blockMethod.blockScripts();
+		
+		for(let w = 0; w < waiting.length; w++) {
+			var ctry = 0;
+			var tries = 4;
+			while(typeof window[waiting[w]] == "undefined") {
+				if(ctry > tries) {
+					console.log('Reached wait limit for script: ' + waiting[w]); break;
+				}
+				await _private.helper.sleep(100); // we can't continue until dependencies are loaded
+				ctry++;
+			}
+		}
+
 		/* initial first block buttons, get count for style requirement below */
 		var buttons = _private.blockMethod.blockButtons(0);
 		var buttonCount = buttons.childNodes.length;
@@ -633,9 +698,9 @@ function Bengine(options,extensions) {
 	
 		/* hide the first delete button if no blocks, else show it */
 		if(doubleBlockCount < 2) {
-			buttons.childNodes[0].children[buttonCount - 1].style.visibility = 'hidden';
+			buttons.childNodes[0].children[2].children[0].style.visibility = 'hidden';
 		} else {
-			buttons.childNodes[0].children[buttonCount - 1].style.visibility = 'visible';
+			buttons.childNodes[0].children[2].children[0].style.visibility = 'visible';
 		}
 	
 		while(count < doubleBlockCount) {
@@ -650,9 +715,9 @@ function Bengine(options,extensions) {
 			/* hide the last delete button */
 			if(count === doubleBlockCount - 2) {
 				/* last button is delete, so hide last delete button */
-				buttons.childNodes[buttonCount - 1].children[0].style.visibility = 'hidden';
+				buttons.childNodes[0].children[2].children[0].style.visibility = 'hidden';
 			} else {
-				buttons.childNodes[buttonCount - 1].children[0].style.visibility = 'visible';
+				buttons.childNodes[0].children[2].children[0].style.visibility = 'visible';
 			}
 	
 			/* create block + button div */
@@ -697,17 +762,56 @@ function Bengine(options,extensions) {
 	
 		/* append the hidden file form to the blocksdiv */
 		enginediv.appendChild(fileform);
-	
-		return i;
 	};
 	
-	_public.loadBlocksEdit = function(engineID,pageIDs,pageData) {
-		if(document.readyState === "complete") {
-			_private.loadBlocksEditReady(engineID,pageIDs,pageData);
-		} else {
-			window.addEventListener('DOMContentLoaded', function() {
-				_private.loadBlocksEditReady(engineID,pageIDs,pageData);
+	/*
+		engineID (string) - element id in DOM, Bengine blocks are displayed here
+		pagePath (string) - directory location for file saves and assets
+	*/
+	_public.loadBlocksEdit = function(engineID,pagePath,pageData = null) {
+		/* validate data */
+		try {
+			if(typeof engineID !== 'string') throw Error('Invalid engineID passed to blockEngineStart()');
+			if(typeof pagePath !== 'string') throw Error('Invalid pagePath passed to blockEngineStart()');
+			if(pageData !== null && !Array.isArray(pageData)) throw Error('pageData must be array passed to blockEngineStart()');
+		} catch(err) {
+			_private.alerts.alert(err.message);
+			return -1;
+		}
+		
+		pagePath = pagePath.replace(/^\/(.+)?\/$/g,"$1");
+		
+		/* initialize parameters */
+		_private.engineID = engineID;
+		_private.pagePath = pagePath;
+		
+		if(pageData === null) {
+			var fpromise = _private.helper.retrieveResource("/content/" + pagePath + "/bengine.json");
+			fpromise.then(function(result) {
+				dataObj = JSON.parse(result.data.file);
+				rpageData = [];
+				for(let i = 0; i < dataObj.types.length; i++) {
+					rpageData.push(dataObj.types[i]);
+					rpageData.push(dataObj.content[i]);
+				}
+				if(document.readyState === "complete") {
+					_private.loadBlocksEditReady(rpageData);
+				} else {
+					window.addEventListener('DOMContentLoaded', function() {
+						_private.loadBlocksEditReady(rpageData);
+					});
+				}
+			},function(error) {
+				_private.alerts.alert("Error: " + error.msg + " Status: " + error.status);
 			});
+		} else {
+			if(document.readyState === "complete") {
+				_private.loadBlocksEditReady(pageData);
+			} else {
+				window.addEventListener('DOMContentLoaded', function() {
+					_private.loadBlocksEditReady(pageData);
+				});
+			}
 		}
 	};
 	this.loadBlocksEdit = _public.loadBlocksEdit;
@@ -717,7 +821,7 @@ function Bengine(options,extensions) {
 	// fetch block javascript
 	_private.blockMethod.blockScripts = function() {
 		/* 
-			function that fetches all scripts, synchronously 
+			function that fetches scripts, synchronously
 			
 			existing - array of src already retrieved
 			scriptArray - array of objects containing script data
@@ -752,15 +856,24 @@ function Bengine(options,extensions) {
 			}
 		}
 		
+		var waiting = [];
+		
 		/* get script data for each extensibles */
 		for(var prop in _private.extensibles)(function(prop) {
 			if(_private.extensibles.hasOwnProperty(prop)) {
 				var scriptArray = _private.extensibles[prop].fetchDependencies();
 				if(scriptArray !== null) {
 					fetchScript([],scriptArray,0,'',0);
+					scriptArray.forEach(function(element) {
+						if(element.wait) {
+							waiting.push(element.wait);
+						}
+					})
 				}
 			}
 		})(prop);
+		
+		return waiting;
 	};
 	
 	// add block styles
@@ -1343,9 +1456,8 @@ function Bengine(options,extensions) {
 			};
 		}
 	
-		contentToSave['bank'] = _private.pageIDs.bank;
-		contentToSave['pid'] = _private.pageIDs.pid;
-		contentToSave['version'] = _private.pageIDs.version;
+		contentToSave['eid'] = _private.engineID;
+		contentToSave['fpath'] = _private.pagePath;
 		contentToSave['tabid'] = table;
 	
 		xmlhttp.open("POST",url,true);

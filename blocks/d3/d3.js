@@ -52,7 +52,7 @@ Bengine.extensibles.d3lib = new function D3lib() {
 	};
 	
 	this.destroy = function() {
-		let style = document.getElementById(thisBlock._private.sid);
+		let style = document.getElementById(_private.sid);
 		style.parentNode.removeChild(style);
 		return;
 	};
@@ -62,7 +62,8 @@ Bengine.extensibles.d3lib = new function D3lib() {
 			inner: '',
 			integrity: '',
 			source: 'https://cdnjs.cloudflare.com/ajax/libs/d3/4.11.0/d3.js',
-			type: 'text/javascript'
+			type: 'text/javascript',
+			wait: 'd3'
 		};
 		var cmjs = {
 			inner: '',
@@ -81,7 +82,7 @@ Bengine.extensibles.d3lib = new function D3lib() {
 		
 		let sid = thisBlock.p.createUUID();
 		d3Block.setAttribute('data-sid',sid);
-		thisBlock._private.sid = sid;
+		_private.sid = sid;
 		
 		var text = "";
 		var data = "";		
@@ -254,18 +255,34 @@ Z	.00074`;
 	};
 
 	this.showContent = function(block,bcontent) {
-		var d3Preview = document.createElement('div');
-		d3Preview.setAttribute('class','d3Image-show');
-
 		var d3Block = document.createElement('div');
 		d3Block.setAttribute('class','xD3');
 		d3Block.setAttribute('style','display:none;visibility:hidden;');
-		d3Block.innerHTML = bcontent['content'];
+		
+		var CodeMirrorBlock = CodeMirror(d3Block,{
+		    value: bcontent['content'],
+		    mode:  "javascript",
+		    lineNumbers: true,
+		    lineWrapping: true
+		});
+		CodeMirrorBlock.setSize('100%','auto');
+
+		var d3Preview = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+		d3Preview.setAttribute('class','d3Image');
+		d3Preview.setAttribute("viewBox", "0 0 800 500");
+		d3Preview.setAttribute("preserveAspectRatio","");
+		
+		var d3Data = document.createElement("code");
+		d3Data.setAttribute("class", "xD3-code");
+		d3Data.setAttribute('style','display:none;visibility:hidden;');
+		d3Data.contentEditable = true;
+		d3Data.innerHTML = bcontent['data'];
 
 		block.appendChild(d3Preview);
 		block.appendChild(d3Block);
-
-		renderD3(d3Block);
+		block.appendChild(d3Data);
+		
+		renderD3(block);
 
 		return block;
 	};

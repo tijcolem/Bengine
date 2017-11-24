@@ -16,11 +16,9 @@ Bengine.extensibles.files = new function Files() {
 		}
 		
 		let dataObj = {
-			bank:thisBlock.d.getPageBank(),
+			fpath:thisBlock.d.getPagePath(),
 			files:filesArray,
-			namespace:namespace,
-			pid:thisBlock.d.getPagePid(),
-			version:thisBlock.d.getPageVersion()
+			namespace:namespace
 		}
 		
 		thisBlock.p.sendData('/files',dataObj).then(function(result) {

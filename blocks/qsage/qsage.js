@@ -91,9 +91,7 @@ Bengine.extensibles.sage = new function Sage() {
 		data['conditional'] = document.getElementById(bid).children[2].value;
 		data['vars'] = document.getElementById(bid).children[3].value;
 		data['type'] = thisBlock.type;
-		data['bank'] = thisBlock.d.getPageBank();
-		data['pid'] = thisBlock.d.getPagePid();
-		data['version'] = thisBlock.d.getPageVersion();
+		data['fpath'] = thisBlock.d.getPagePath();
 		
 		var promise = thisBlock.p.sendData('/code',data);
 		

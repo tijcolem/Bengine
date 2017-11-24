@@ -52,7 +52,8 @@ Bengine.extensibles.slide = new function Slide() {
 			inner: '',
 			integrity: '',
 			source: 'https://mozilla.github.io/pdf.js/build/pdf.js',
-			type: 'text/javascript'
+			type: 'text/javascript',
+			wait: 'PDFJS'
 		};
 		
 		return [pdfjs];

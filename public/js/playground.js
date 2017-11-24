@@ -224,6 +224,6 @@ function loadCustomBlock() {
     blockExtensibles[blockObject.type] = blockObject;
 
     var playEngine = new Bengine(blockExtensibles,blockCustomFunctions,blockOptions);
-    playEngine.blockEngineStart('content',['bank','pid','1.0'],[]);
+    playEngine.blockEngineStart('content','bank/pid/1.0');
     console.log(playEngine);
 }

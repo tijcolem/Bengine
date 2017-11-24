@@ -35,7 +35,8 @@ Bengine.extensibles.xmath = new function Xmath() {
 			inner: '',
 			integrity: '',
 			source: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML',
-			type: 'text/javascript'
+			type: 'text/javascript',
+			wait: 'MathJax'
 		};
 		var mathjaxConfig = {
 			inner: `MathJax.Hub.Config({mml2jax:{processClass:'mathImage',ignoreClass:'xample'},asciimath2jax:{processClass:'mathImage',ignoreClass:'body'},messageStyle:'none'});`,

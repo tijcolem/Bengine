@@ -17,15 +17,14 @@ exports.process = function(request,response) {
     request.on('end',function() {
 	    /*
 		    json should contain:
-		    	code.bank		- name of bank (could be user)
+		    	code.fpath		- path to file assets
 		    	code.type		- the service, like 'sage'
 		    	code.code		- the code to run
 		    	code.namespace	- the namespace to store variables under
-		    	code.pid		- page id
 		    	code.vars		- any variables to store from the run
-		    	code.version	- any variables to store from the run
 		*/
 	    var code = JSON.parse(body);
+	    code.fpath = code.fpath.replace(/^\/(.+)?\/$/g,"$1");
     
 	    var serviceURL = null;
 	    try {
@@ -93,7 +92,7 @@ exports.process = function(request,response) {
 						writeQueue = [];
 						values.forEach(function(fdata) {							
 							let wpromise = new Promise((resolve,reject) => {
-								let path = ["./public/content/",code.bank,'/',code.pid,'/',code.version,'/',fdata['file']].join('');
+								let path = ["./public/content/",code.fpath,'/',fdata['file']].join('');
 								fs.writeFile(path,fdata['content'],function(err) {
 									if(err) {
 										reject(err);
@@ -104,7 +103,7 @@ exports.process = function(request,response) {
 							});
 							writeQueue.push(wpromise);
 
-							let path = ["/content/",code.bank,'/',code.pid,'/',code.version,'/',fdata['file']].join('');
+							let path = ["/content/",code.fpath,'/',fdata['file']].join('');
 							rData[code['namespace']]['variables'][fdata['name']] = path;
 						});
 						

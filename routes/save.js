@@ -22,24 +22,24 @@ exports.process = function(request,response) {
 	    /*
 		    types		[string,...]		block types
 		    content		[object,...]		block content
-		    bank		(string)			user or group
-		    pid			(string)			page name
-		    version		(string)			page version
+		    fpath		(string)			path to assets
 		    tabid		(number)			0 -> temp save, 1 -> perm save
 		*/
 		
 		// validate path
-		if(!valid.type(blocks.bank,'string') || !valid.type(blocks.pid,'string') || !valid.type(blocks.version,'string')) {
-			rest.respond(response,400,'Invalid Type: bank,pid,version',{});
+		if(!valid.type(blocks.fpath,'string')) {
+			rest.respond(response,400,'Invalid Type: assets path',{});
 			return;
 		}
-		if(blocks.bank.length < 1 || blocks.pid.length < 1 || blocks.version.length !== 3) {
-			rest.respond(response,400,'Invalid Length: bank,pid,version',{});
+		if(blocks.fpath.length < 1) {
+			rest.respond(response,400,'Invalid Length: assets path',{});
 			return;
 		}
 		
+		blocks.fpath = blocks.fpath.replace(/^\/(.+)?\/$/g,"$1");
+		
 		// create page directory if not exists
-		const targetDir = ["public","content",blocks.bank,blocks.pid,blocks.version].join(path.sep);
+		const targetDir = ["public","content",blocks.fpath].join(path.sep);
 		const initDir = path.isAbsolute(targetDir) ? path.sep : '';
 		
 		targetDir.split(path.sep).reduce((parentDir, childDir) => {

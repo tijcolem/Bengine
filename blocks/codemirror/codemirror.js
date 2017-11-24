@@ -90,11 +90,13 @@ A list of supported programming languages can be found here: https://github.com/
 		} else {
 			mode = bcontent['mode'];
 			text = bcontent['content'];
+			
+			cmMode.setAttribute("value", mode);
 		}
 		
 		var CodeMirrorBlock = CodeMirror(cmBlock,{
 		    value: text,
-		    mode:  "javascript",
+		    mode:  mode,
 		    lineNumbers: true,
 		    lineWrapping: true
 		});
@@ -107,7 +109,11 @@ A list of supported programming languages can be found here: https://github.com/
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		document.getElementById(bid).children[1].children[0].CodeMirror.refresh();
+		try {
+			document.getElementById(bid).children[0].children[0].CodeMirror.refresh();
+		} catch(err) {
+			document.getElementById(bid).children[1].children[0].CodeMirror.refresh();
+		}
 	};
 	
 	this.runBlock = function(bid) {
@@ -127,14 +133,15 @@ A list of supported programming languages can be found here: https://github.com/
 		
 		var mode = bcontent['mode'];
 		var text = bcontent['content'];
-		
+
 		var CodeMirrorBlock = CodeMirror(cmBlock,{
 		    value: text,
 		    mode:  mode,
 		    lineNumbers: true,
-		    lineWrapping: true
+		    lineWrapping: true,
+		    readOnly: true
 		});
-		CodeMirrorBlock.setSize('100%','100%');
+		CodeMirrorBlock.setSize('100%','auto');
 
 		block.appendChild(cmBlock);
 
