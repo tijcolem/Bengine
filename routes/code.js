@@ -34,12 +34,19 @@ exports.process = function(request,response) {
 			return;
 	    }
 	    
+	    /*
+		    Code Services Expect:
+		    	{
+			    	'code' : '$code-to-run'
+			    	'vars' : [variables,to,keep]
+			    }
+		*/
 	    var requestData = {};
-	    requestData[code['type']] = code['code'];
+	    requestData['code'] = code['code'];
 	    requestData['vars'] = code['vars'].replace(/ /g,'').replace(/\n$/,'').split(/\n|,/g); // split into array
 	    
 	    orequest({
-		    url: serviceURL + "/" + code.type,
+		    url: serviceURL + "/service",
 		    method: "POST",
 		    body: requestData,
 		    json: true

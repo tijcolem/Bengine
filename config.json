@@ -29,7 +29,7 @@
 	"services":
 	{
 		"sage":"http://localhost:9601",
-		"python":"http://localhost:9602",
+		"python2":"http://localhost:9602",
 		"audio":"http://localhost:9001",
 		"image":"http://localhost:9002",
 		"slide":"http://localhost:9003",

@@ -34,7 +34,7 @@ module.exports = function(config) {
 		app.set("testing",false);
 	}
 	
-	/* set any back-end routes */
+	/* set any back-end routes & commands for those routes */
 	app.set("services",config["services"]);
 	
 	/* set static file path */

@@ -8,6 +8,26 @@ Bengine.extensibles.sage = new function Sage() {
 	var thisBlock = this;
 	var _private = {};
 	
+	_private.runCode(bid) {
+		var data = {};
+		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
+		data['namespace'] = document.getElementById(bid).children[1].value;
+		data['conditional'] = document.getElementById(bid).children[2].value;
+		data['vars'] = document.getElementById(bid).children[3].value;
+		data['type'] = thisBlock.type;
+		data['fpath'] = thisBlock.d.getPagePath();
+		
+		var promise = thisBlock.p.sendData('/code',data);
+		
+		promise.then(function(result) {
+			thisBlock.d.variables[data['namespace']] = result['data'][data['namespace']]['variables'];
+			thisBlock.p.alerts.log('complete','success');
+			console.log(thisBlock.d.variables);
+		},function(error) {
+			thisBlock.p.alerts.alert(error.msg);
+		});
+	}
+	
 	this.destroy = function() {
 		return;
 	};
@@ -69,7 +89,7 @@ Bengine.extensibles.sage = new function Sage() {
 		
 		var sageVars = document.createElement("textarea");
 		sageVars.setAttribute("class","xSgx-Vars");
-		sageVars.setAttribute("value",vars);
+		sageVars.value = vars;
 		sageVars.setAttribute("placeholder","Comma or newline separated variables you want to keep from your code run.");
 
 		block.appendChild(sageBlock);
@@ -85,23 +105,7 @@ Bengine.extensibles.sage = new function Sage() {
 	};
 	
 	this.runBlock = function(bid) {
-		var data = {};
-		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
-		data['namespace'] = document.getElementById(bid).children[1].value;
-		data['conditional'] = document.getElementById(bid).children[2].value;
-		data['vars'] = document.getElementById(bid).children[3].value;
-		data['type'] = thisBlock.type;
-		data['fpath'] = thisBlock.d.getPagePath();
-		
-		var promise = thisBlock.p.sendData('/code',data);
-		
-		promise.then(function(result) {
-			thisBlock.d.variables[data['namespace']] = result['data'][data['namespace']]['variables'];
-			thisBlock.p.alerts.log('complete','success');
-			console.log(thisBlock.d.variables);
-		},function(error) {
-			thisBlock.p.alerts.alert(error.msg);
-		});
+		_private.runCode(bid);
 	}
 
 	this.saveContent = function(bid) {

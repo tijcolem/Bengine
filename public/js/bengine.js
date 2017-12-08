@@ -41,7 +41,7 @@ function Bengine(options,extensions) {
 	// initialize options
 	_private.options = {};
 	if(typeof options !== 'object') var coptions = {}; else var coptions = Object.assign({},options);
-	_private.options.blockLimit = coptions.blockLimit || 8;
+	_private.options.blockLimit = coptions.blockLimit || 16;
 	_private.options.defaultText = (coptions.defaultText !== false);
 	_private.options.enableAutoSave = coptions.enableSave ||  false;
 	_private.options.enableSingleView = coptions.enableSingleView || false;
@@ -296,6 +296,32 @@ function Bengine(options,extensions) {
 	
 	/*** Section: Private Helper Methods ***/
 	
+	// used for tracking .onprogress events
+	_private.helper.counter = function(reset) {
+		if(typeof this.track === 'undefined' || this.track === 0) {
+			this.track = 1;
+			return 1;
+		} else if(reset) {
+			this.track = 0;
+			return 0;
+		} else {
+			this.track++;
+		}
+		return this.track;
+	};
+
+	// keeps track of previous and current spots for media upload progress
+	_private.helper.position = function(spot) {
+		if(typeof this.prev === 'undefined') {
+			this.prev = 0;
+			this.curr = spot;
+		} else if (this.curr !== spot) {
+			this.prev = this.curr;
+			this.curr = spot;
+		}
+		return [this.prev,this.curr];
+	};
+	
 	// remove node
 	_private.helper.emptyDiv = function(node) {
 		if (typeof node === "object") {
@@ -485,7 +511,7 @@ function Bengine(options,extensions) {
 		
 		for(let w = 0; w < waiting.length; w++) {
 			var ctry = 0;
-			var tries = 4;
+			var tries = 100;
 			while(typeof window[waiting[w]] == "undefined") {
 				if(ctry > tries) {
 					console.log('Reached wait limit for script: ' + waiting[w]); break;
@@ -502,7 +528,13 @@ function Bengine(options,extensions) {
 		while(count < doubleBlockCount) {
 			/* create the block */
 			var block = _private.blockMethod.generateBlock(i,blockData[count]);
-			var retblock = _private.extensibles[blockData[count]].showContent(block,blockData[count + 1]);
+			try {
+				var retblock = _private.extensibles[blockData[count]].showContent(block,blockData[count + 1]);
+			} catch(err) {
+				let blockType = blockData[count];
+				_private.alerts.alert("Missing Block Dependency: " + blockType + ". Check Console For More Information");
+				throw err;
+			}
 	
 			if(_private.options.enableSingleView) {
 				retblock.children[0].className += " bengine-block-style-embed";
@@ -616,7 +648,7 @@ function Bengine(options,extensions) {
 					rpageData.push(dataObj.types[i]);
 					rpageData.push(dataObj.content[i]);
 				}
-				if(document.readyState === "complete") {
+				if(document.readyState !== "loading") {
 					_private.loadBlocksShowReady(rpageData);
 				} else {
 					window.addEventListener('DOMContentLoaded', function() {
@@ -627,7 +659,7 @@ function Bengine(options,extensions) {
 				_private.alerts.alert("Error: " + error.msg + " Status: " + error.status);
 			});
 		} else {
-			if(document.readyState === "complete") {
+			if(document.readyState !== "loading") {
 				_private.loadBlocksShowReady(pageData);
 			} else {
 				window.addEventListener('DOMContentLoaded', function() {
@@ -677,7 +709,7 @@ function Bengine(options,extensions) {
 		
 		for(let w = 0; w < waiting.length; w++) {
 			var ctry = 0;
-			var tries = 4;
+			var tries = 100;
 			while(typeof window[waiting[w]] == "undefined") {
 				if(ctry > tries) {
 					console.log('Reached wait limit for script: ' + waiting[w]); break;
@@ -698,9 +730,9 @@ function Bengine(options,extensions) {
 	
 		/* hide the first delete button if no blocks, else show it */
 		if(doubleBlockCount < 2) {
-			buttons.childNodes[0].children[2].children[0].style.visibility = 'hidden';
+			buttons.childNodes[0].lastChild.children[0].style.visibility = 'hidden';
 		} else {
-			buttons.childNodes[0].children[2].children[0].style.visibility = 'visible';
+			buttons.childNodes[0].lastChild.children[0].style.visibility = 'visible';
 		}
 	
 		while(count < doubleBlockCount) {
@@ -749,7 +781,7 @@ function Bengine(options,extensions) {
 		filebtn.setAttribute('type','submit');
 		filebtn.setAttribute('id','upload-button');
 	
-		var url = _private.helper.createURL("/uploadmedia");
+		var url = _private.helper.createURL("/upload");
 	
 		var fileform = document.createElement('form');
 		fileform.setAttribute('id','file-form');
@@ -794,7 +826,7 @@ function Bengine(options,extensions) {
 					rpageData.push(dataObj.types[i]);
 					rpageData.push(dataObj.content[i]);
 				}
-				if(document.readyState === "complete") {
+				if(document.readyState !== "loading") {
 					_private.loadBlocksEditReady(rpageData);
 				} else {
 					window.addEventListener('DOMContentLoaded', function() {
@@ -802,10 +834,15 @@ function Bengine(options,extensions) {
 					});
 				}
 			},function(error) {
-				_private.alerts.alert("Error: " + error.msg + " Status: " + error.status);
+				if(error.status === 404) {
+					// new file
+					_private.loadBlocksEditReady([]);
+				} else {
+					_private.alerts.alert("Error: " + error.msg + " Status: " + error.status);
+				}
 			});
 		} else {
-			if(document.readyState === "complete") {
+			if(document.readyState !== "loading") {
 				_private.loadBlocksEditReady(pageData);
 			} else {
 				window.addEventListener('DOMContentLoaded', function() {
@@ -1067,7 +1104,9 @@ function Bengine(options,extensions) {
 			runBtn.innerHTML = 'Run Block';
 		}
 		
-		runBtn.onclick = ext.runBlock.bind(null,'bengine-a-' + _private.engineID + '-' + bid);
+		runBtn.onclick = function() {
+			ext.runBlock(runBtn.parentNode.id);
+		};
 		block.appendChild(runBtn);
 		
 		return block;
@@ -1355,9 +1394,6 @@ function Bengine(options,extensions) {
 		var xid = document.getElementById('bengine-x-id-' + _private.engineID).getAttribute('data-xid');
 		var xidName = document.getElementById('bengine-x-id-' + _private.engineID).getAttribute('name');
 	
-		/* get the did for restarting the bengine instance */
-		var did = document.getElementById('bengine-x-id-' + _private.engineID).getAttribute('data-did');
-	
 		var xmlhttp;
 		xmlhttp = new XMLHttpRequest();
 	
@@ -1380,9 +1416,9 @@ function Bengine(options,extensions) {
 						var main = oldBengine.parentNode;
 						main.removeChild(oldBengine);
 						if(result.data === "") {
-							blockEngineStart(main.getAttribute('id'),[xidName,xid,did],[]);
+							blockEngineStart(main.getAttribute('id'),[xidName,xid],[]);
 						} else {
-							blockEngineStart(main.getAttribute('id'),[xidName,xid,did],result.data.split(","));
+							blockEngineStart(main.getAttribute('id'),[xidName,xid],result.data.split(","));
 						}
 						_private.display.updateSaveStatus("Saved");
 						break;
@@ -1429,11 +1465,11 @@ function Bengine(options,extensions) {
 				i++;
 				bid++;
 			}
-	
-			/* merge mediaType & mediaContent arrays into default comma-separated strings */
-			contentToSave['types'] = blockType;
-			contentToSave['content'] = blockContent;
 		}
+		
+		/* merge mediaType & mediaContent arrays into default comma-separated strings */
+		contentToSave['types'] = blockType;
+		contentToSave['content'] = blockContent;
 		
 		/* create the url destination for the ajax request */
 		var url = _private.helper.createURL("/save");
@@ -1486,6 +1522,99 @@ function Bengine(options,extensions) {
 		xmlhttp.send(JSON.stringify(contentToSave));
 	};
 	
+	_private.uploadProcess = function(bid,blockObj,file) {
+		/* create the block to host the media */
+		_private.blockMethod.createBlock(bid - 1,blockObj);
+
+		/* wrap the ajax request in a promise */
+		var promise = new Promise(function(resolve,reject) {
+
+			/* create javascript FormData object and append the file */
+			var formData = new FormData();
+			formData.append('media',file,file.name);
+
+			/* grab the domain and create the url destination for the ajax request */
+			var url = _private.helper.createURL("/upload?fpath=" + encodeURIComponent(_private.pagePath) + "&btype=" + blockObj.type);
+
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.open('POST',url,true);
+
+			/* upload progress */
+			xmlhttp.upload.onloadstart = function(e) {
+				_private.display.progressInitialize("Uploading...",e.total);
+			};
+			xmlhttp.upload.onprogress = function(e) {
+				if (e.lengthComputable) {
+					_private.display.progressUpdate(e.loaded);
+				}
+			};
+			xmlhttp.upload.onloadend = function(e) {
+				_private.display.progressFinalize("Uploaded",e.total);
+			};
+
+			/* conversion progress */
+			xmlhttp.onprogress = function(e) {
+				var spotArray = _private.helper.position(xmlhttp.responseText.length);
+				var current = _private.helper.counter(false);
+				var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
+				if(current === 1) {
+					_private.display.progressInitialize("Converting...",val[val.length - 1]);
+				} else {
+					_private.display.progressUpdate(val[val.length - 1]);
+				}
+			};
+
+			xmlhttp.onloadend = function(e) {
+				var spotArray = _private.helper.position(xmlhttp.responseText.length);
+				var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
+				_private.display.progressFinalize("Not Saved",val[val.length - 1]);
+				_private.helper.counter(true);
+			};
+
+			xmlhttp.onreadystatechange = function() {
+				if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+					switch(xmlhttp.status) {
+				        case 500:
+				        	_private.blockMethod.deleteBlock(bid - 1);
+				        	reject({msg:"unknown",status:500,data:{}});
+				        	break;
+				        case 0:
+				        	_private.blockMethod.deleteBlock(bid - 1);
+				        	reject({msg:"unknown",status:0,data:{}});
+				        	break;
+				        case 200:
+				        	var spots = _private.helper.position(xmlhttp.responseText.length);
+							var val = xmlhttp.responseText.slice(spots[0],spots[1]).split(",");
+							
+							/* reset position */
+							_private.helper.position(0); _private.helper.position(0);
+							
+							resolve({msg:'Success',status:200,data:{spot:val[val.length - 1]}});
+							break;
+				        default:
+				        	_private.blockMethod.deleteBlock(bid - 1);
+				        	var result = JSON.parse(xmlhttp.responseText);
+				        	reject({msg:result.msg,status:xmlhttp.status,data:{}});
+			        }
+				}
+			};
+
+			xmlhttp.send(formData);
+		});
+
+		promise.then(function(result) {
+			blockObj.afterDOMinsert('bengine-a-' + _private.engineID + '-' + bid,result.data.spot);
+
+			/* save blocks to temp table, indicated by false */
+			_private.display.updateSaveStatus("Not Saved");
+			if(_private.options.enableAutoSave) {
+				saveBlocks(false);
+			}
+		},function(error) {
+			_private.alerts.log("Error: " + error.msg + " Status: " + error.status);
+		});
+	};
+	
 	_private.datahandler.uploadMedia = function(bid,blockObj) {
 	
 		/* get the hidden file-select object that will store the user's file selection */
@@ -1507,16 +1636,15 @@ function Bengine(options,extensions) {
 			var file = fileSelect.files[0];
 	
 			/* validation */
-			var notvalid = false;
-			var nofile = false;
-			var errorMsg;
 			if(fileSelect.files.length > 0) {
 				if(file.size > (_private.options.mediaLimit * 1048576)) {
-					notvalid = true;
-					errorMsg = `Files Must Be Less Than ${_private.options.mediaLimit} MB`;
+					_private.alerts.alert(`Files Must Be Less Than ${_private.options.mediaLimit} MB`);
+					return;
 				}
 			} else {
-				nofile = true;
+				/* do nothing, no file selected */
+				this.value = null;
+				return;
 			}
 	
 			var checklengthvideo = false;
@@ -1536,162 +1664,27 @@ function Bengine(options,extensions) {
 					break;
 				default:
 			}
-	
-			if(nofile) {
-				/* do nothing, no file selected */
-				this.value = null;
-				return;
-			}
-	
-			if(notvalid) {
-				_private.alerts.alert(errorMsg);
+
+			if(checklengthvideo) {
+				vidTempElement.ondurationchange = function() {
+					if(this.duration > _private.options.playableMediaLimit) {
+						_private.alerts.alert(`Videos Must Be Less Than ${_private.options.playableMediaLimit} Seconds`);
+					} else {
+						uploadProcess(bid,blockObj,file);
+					}
+				};
+			} else if(checklengthaudio) {
+				audTempElement.ondurationchange = function() {
+					if(this.duration > _private.options.playableMediaLimit) {
+						_private.alerts.alert(`Videos Must Be Less Than ${_private.options.playableMediaLimit} Seconds`);
+					} else {
+						uploadProcess(bid,blockObj,file);
+					}
+				};
 			} else {
-				/* this gets called below where length check occurs */
-				function uploadProcess() {
-					/* create the block to host the media */
-					_private.blockMethod.createBlock(bid - 1,blockObj);
-	
-					/* wrap the ajax request in a promise */
-					var promise = new Promise(function(resolve,reject) {
-	
-						/* create javascript FormData object and append the file */
-						var formData = new FormData();
-						formData.append('media',file,file.name);
-	
-						/* get the directory id */
-						var did = document.getElementById('bengine-x-id-' + _private.engineID).getAttribute('data-did');
-	
-						/* grab the domain and create the url destination for the ajax request */
-						var url = _private.helper.createURL("/uploadmedia?did=" + did + "&btype=" + blockObj.type);
-	
-						var xmlhttp = new XMLHttpRequest();
-						xmlhttp.open('POST',url,true);
-	
-						/* upload progress */
-						xmlhttp.upload.onloadstart = function(e) {
-							_private.display.progressInitialize("Uploading...",e.total);
-						};
-						xmlhttp.upload.onprogress = function(e) {
-							if (e.lengthComputable) {
-								_private.display.progressUpdate(e.loaded);
-							}
-						};
-						xmlhttp.upload.onloadend = function(e) {
-							_private.display.progressFinalize("Uploaded",e.total);
-						};
-	
-						function counter(reset) {
-							if(typeof counter.track === 'undefined' || counter.track === 0) {
-								counter.track = 1;
-								return 1;
-							} else if(reset) {
-								counter.track = 0;
-								return 0;
-							} else {
-								counter.track++;
-							}
-							return counter.track;
-						}
-	
-						function position(spot) {
-							if(typeof position.prev === 'undefined') {
-								position.prev = 0;
-								position.curr = spot;
-							} else if (position.curr !== spot) {
-								position.prev = position.curr;
-								position.curr = spot;
-							}
-							return [position.prev,position.curr];
-						}
-	
-						/* conversion progress */
-						xmlhttp.onprogress = function(e) {
-							var spotArray = position(xmlhttp.responseText.length);
-							var current = counter(false);
-							var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
-							if(current === 1) {
-								_private.display.progressInitialize("Converting...",val[val.length - 1]);
-							} else {
-								_private.display.progressUpdate(val[val.length - 1]);
-							}
-						};
-	
-						xmlhttp.onloadend = function(e) {
-							var spotArray = position(xmlhttp.responseText.length);
-							var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
-							_private.display.progressFinalize("Not Saved",val[val.length - 1]);
-							counter(true);
-						};
-	
-						xmlhttp.onreadystatechange = function() {
-							if (xmlhttp.readyState === XMLHttpRequest.DONE) {
-								if(xmlhttp.status === 200) {
-									if(xmlhttp.responseText === "err") {
-										reject("err");
-									} else if(xmlhttp.responseText === "convertmediaerr") {
-										reject("convertmediaerr");
-									} else if(xmlhttp.responseText === "nopatherr") {
-										reject("nopatherr");
-									} else if (xmlhttp.responseText === "nouploadloggedout") {
-										_private.blockMethod.deleteBlock(bid - 1);
-										_private.alerts.alert("You Can't Upload Media Because You Are Logged Out. Log Back In On A Separate Page, Then Return Here & Try Again.");
-										reject("err");
-									} else {
-										var spotArray = position(xmlhttp.responseText.length);
-										var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
-										/* reset position */
-										position(0); position(0);
-										resolve(val[val.length - 1]);
-									}
-								} else {
-									_private.alerts.alert('Error:' + xmlhttp.status + ": Please Try Again");
-									reject("err");
-								}
-							}
-						};
-	
-						xmlhttp.send(formData);
-					});
-	
-					promise.then(function(data) {
-						blockObj.afterDOMinsert('bengine-a-' + _private.engineID + '-' + bid,data);
-	
-						/* save blocks to temp table, indicated by false */
-						_private.display.updateSaveStatus("Not Saved");
-						if(_private.options.enableAutoSave) {
-							saveBlocks(false);
-						}
-					},function(error) {
-						if(error === "convertmediaerr") {
-							_private.alerts.log("There was an error with that media format. Please try a different file type.");
-						} else if (error === "nopatherr") {
-							_private.alerts.log("Bad path error.");
-						} else {
-							_private.alerts.log("There was an unknown error during media upload.");
-						}
-					});
-				}
-	
-				if(checklengthvideo) {
-					vidTempElement.ondurationchange = function() {
-						if(this.duration > _private.options.playableMediaLimit) {
-							_private.alerts.alert(`Videos Must Be Less Than ${_private.options.playableMediaLimit} Seconds`);
-						} else {
-							uploadProcess();
-						}
-					};
-				} else if(checklengthaudio) {
-					audTempElement.ondurationchange = function() {
-						if(this.duration > _private.options.playableMediaLimit) {
-							_private.alerts.alert(`Videos Must Be Less Than ${_private.options.playableMediaLimit} Seconds`);
-						} else {
-							uploadProcess();
-						}
-					};
-				} else {
-					uploadProcess();
-				}
+				uploadProcess(bid,blockObj,file);
 			}
+			
 			/* resets selection to nothing, in case user decides to upload the same file, onchange will still fire */
 			this.value = null;
 		};

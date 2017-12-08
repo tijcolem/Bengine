@@ -28,19 +28,16 @@
 		
 		<footer class="footer"></footer>
 
-		<!-- load bengine -->
-		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.core.css">
-		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.default.css">
+		<!-- get extensions for bengine -->
+		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.core.css" defer>
+		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.default.css" defer>
 		<script src="https://rawgit.com/fabien-d/alertify.js/0.3/src/alertify.js"></script>
+		
+		<!-- load bengine -->
 		<script src="js/bengine.js"></script>
 		<script>
-			var blockExtensibles = {};
-			var blockCustomFunctions = {};
-			var blockOptions = {
-			    enableSave:false
-			};
-			
-			new Bengine({},{},{}); // just for loading styles
+			var extensions = { alerts:alertify };
+			new Bengine({},extensions); // just for loading styles
 		</script>
 		<script src="js/playground.js"></script>
 	

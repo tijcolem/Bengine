@@ -28,7 +28,7 @@ Bengine.extensibles.qcss = new function Qcss() {
 	};
 	
 	this.destroy = function(block) {
-		let sid = block.childNodes[0].getAttribute('data-sid');
+		let sid = block.childNodes[2].getAttribute('data-sid');
 		let styletag = document.getElementById('qengine-styles-' + sid);
 		
 		styletag.parentNode.removeChild(styletag);
@@ -72,12 +72,12 @@ Bengine.extensibles.qcss = new function Qcss() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		let sid = document.getElementById(bid).childNodes[0].getAttribute('data-sid');
+		let sid = document.getElementById(bid).childNodes[2].getAttribute('data-sid');
 		_private.renderCSS(document.getElementById(bid).childNodes[0],sid);
 	};
 	
 	this.runBlock = function(bid) {
-		var qcssBlock = document.getElementById(bid).childNodes[0];
+		var qcssBlock = document.getElementById(bid).childNodes[2];
 		let sid = qcssBlock.getAttribute('data-sid');
 		_private.renderCSS(qcssBlock,sid);
 	}

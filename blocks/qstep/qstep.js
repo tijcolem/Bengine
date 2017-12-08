@@ -20,7 +20,6 @@ Bengine.extensibles.qstep = new function Qstep() {
 
 	this.insertContent = function(block,bcontent) {
 		var str;
-		let explain = 'title="Put a variable here that resolves to a value between 0 and 1. It is the final student grade."'
 		if(!thisBlock.p.emptyObject(bcontent)) {
 			str = `<input type="text" class="xQstep" maxlength="${_private.blocklimit}" value="${bcontent['content']}" placeholder="Variable that must exist for next step to run.">`;
 		} else {

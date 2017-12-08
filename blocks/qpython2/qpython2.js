@@ -1,5 +1,5 @@
-Bengine.extensibles.python = new function Python2() {
-	this.type = "python";
+Bengine.extensibles.python2 = new function Python2() {
+	this.type = "python2";
 	this.name = "python2.7";
 	this.category = "quiz";
 	this.upload = false;
@@ -7,6 +7,26 @@ Bengine.extensibles.python = new function Python2() {
 
 	var thisBlock = this;
 	var _private = {};
+	
+	_private.runCode = (bid) => {
+		var data = {};
+		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
+		data['namespace'] = document.getElementById(bid).children[1].value.trim();
+		data['conditional'] = document.getElementById(bid).children[2].value.trim();
+		data['vars'] = document.getElementById(bid).children[3].value;
+		data['type'] = thisBlock.type;
+		data['fpath'] = thisBlock.d.getPagePath();		
+		var promise = thisBlock.p.sendData('/code',data);
+		
+		promise.then(function(result) {
+			thisBlock.d.variables[data['namespace']] = result['data'][data['namespace']]['variables'];
+			thisBlock.p.alerts.log('complete','success');
+			console.log(thisBlock.d.variables);
+		},function(result) {
+			console.log('This code run caused an error: ' + data['code']);
+			thisBlock.p.alerts.log("Error. Status: " + result.status + " Message: " + result.msg,"error");
+		});
+	};
 	
 	this.destroy = function() {
 		return;
@@ -69,7 +89,7 @@ Bengine.extensibles.python = new function Python2() {
 		
 		var pyVars = document.createElement("textarea");
 		pyVars.setAttribute("class","xPyx-Vars");
-		pyVars.setAttribute("value",vars);
+		pyVars.value = vars;
 		pyVars.setAttribute("placeholder","Comma or newline separated variables you want to keep from your code run.");
 
 		block.appendChild(pyBlock);
@@ -85,22 +105,7 @@ Bengine.extensibles.python = new function Python2() {
 	};
 	
 	this.runBlock = function(bid) {
-		var data = {};
-		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
-		data['namespace'] = document.getElementById(bid).children[1].value.trim();
-		data['conditional'] = document.getElementById(bid).children[2].value.trim();
-		data['vars'] = document.getElementById(bid).children[3].value;
-		data['type'] = thisBlock.type;
-		data['fpath'] = thisBlock.d.getPagePath();		
-		var promise = thisBlock.p.sendData('/code',data);
-		
-		promise.then(function(result) {
-			thisBlock.d.variables[data['namespace']] = result['data'][data['namespace']]['variables'];
-			thisBlock.p.alerts.log('complete','success');
-			console.log(thisBlock.d.variables);
-		},function(result) {
-			thisBlock.p.alerts.alert("Error. Status: " + result.status + " Message: " + result.msg);
-		});
+		_private.runCode(bid);
 	}
 
 	this.saveContent = function(bid) {

@@ -24,14 +24,18 @@ exports.process = function(request,response) {
 		    	fdata.namespace		- the namespace to put files under
 		    	fdata.fpath			- path to file assets
 		*/
-	    var fdata = JSON.parse(body);
-	    fdata.fpath = fdata.fpath.replace(/^\/(.+)?\/$/g,"$1");
+		try {
+	    	var fdata = JSON.parse(body);
+			fdata.fpath = fdata.fpath.replace(/^\/(.+)?\/$/g,"$1");
+		} catch(err) {
+			rest.respond(response,400,'Invalid JSON',{});
+			return;
+		}
 	    
 	    /* just send back the path to the files, check they exist though */
 	    rData['files'] = {};
 	    checkQueue = [];
 	    fdata.files.forEach(function(element) {
-
 			if(element.indexOf('http') > -1) {
 				var fparts = element.split('/');
 				var fname = fparts[fparts.length-1];

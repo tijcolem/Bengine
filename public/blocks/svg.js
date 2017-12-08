@@ -1,1 +1,0 @@
-../../blocks/svg/svg.js

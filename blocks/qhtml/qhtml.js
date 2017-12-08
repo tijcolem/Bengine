@@ -82,7 +82,7 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 	};
 	
 	_private.renderHTML = function(block) {
-		let replaced = thisBlock.p.replaceVars(block.innerText);
+		let replaced = thisBlock.p.replaceVars(block.value);
 		let subbed = _private.replaceShortcodes(replaced);
 		
 		/* get the html input */
@@ -149,10 +149,8 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 				
 				let keys = Object.keys(thisBlock.d.variables);
 				if(keys.includes(parts[0])) {
-					console.log(['hi',name,value]);
 					thisBlock.d.variables[parts[0]][parts[1]] = value;
 				} else {
-					console.log(['there',name,value]);
 					thisBlock.d.variables[parts[0]] = {};
 					thisBlock.d.variables[parts[0]][parts[1]] = value;
 				}
@@ -164,9 +162,8 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 			return null;
 		};
 
-		var qhtmlBlock = document.createElement('div');
+		var qhtmlBlock = document.createElement('textarea');
 		qhtmlBlock.setAttribute('class','xQhtml');
-		qhtmlBlock.contentEditable = true;
 		
 		var blockNS = document.createElement("input");
 		blockNS.setAttribute("type","text");
@@ -179,7 +176,7 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 		blockCond.setAttribute("placeholder","Block Conditional (optional)");
 		
 		if(!thisBlock.p.emptyObject(bcontent)) {
-			qhtmlBlock.innerText = bcontent['content'];
+			qhtmlBlock.value = bcontent['content'];
 			blockNS.value = bcontent['namespace'];
 			blockCond.value = bcontent['conditional'];
 		} else {
@@ -205,7 +202,7 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 	this.saveContent = function(bid) {
 		let namespace = document.getElementById(bid).children[1].value;
 		let conditional = document.getElementById(bid).children[2].value;
-		let html = document.getElementById(bid).children[3].innerHTML;
+		let html = document.getElementById(bid).children[3].value;
 		return {'content':html,'namespace':namespace,'conditional':conditional}; // ? thisBlock.p.decodeHTML(html)
 	};
 
@@ -230,7 +227,7 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 		var stylestr = `.xQhtml {
 			display: inline-block;
 			width: 100%;
-			height: auto;
+			height: 200px;
 			border: 1px solid black;
 			background-color: white;
 
@@ -238,7 +235,9 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 			margin: 0;
 			box-sizing: border-box;
 
-			font-family: Arial, Helvetica, sans-serif;
+			font-family: Lucida Console, Monaco, monospace;
+			font-size: 0.8em;
+			resize: vertical;
 		}
 
 		.xQhtml-show {
@@ -251,18 +250,13 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 
 			margin: 0px;
 			box-sizing: border-box;
+			overflow: hidden;
 		}
 		
 		.xQhtml-parent {
 			margin: 0px;
 			width: 100%;
 			height: 100%;
-		}
-		
-		.xQhtml-parent * {
-			margin: 0px;
-			width: 100%;
-			height: auto;
 		}`;
 		return stylestr;
 	};

@@ -21,7 +21,8 @@ this.category = "text";
 this.upload = false;
 this.accept = null;
 
-tareaObj = this; // it's helpful to keep a reference to this object
+var thisBlock = this; // it's helpful to keep a reference to this object
+var _private = {}; // attach private methods to this
 
 /**************************************
 destroy(bid)
@@ -60,7 +61,7 @@ this.insertContent = function(block,content) {
 	var xtarea = document.createElement("textarea");
 	xtarea.setAttribute("class","xTar");
 	
-	if(tareaObj.p.emptyObject(content)) {
+	if(thisBlock.p.emptyObject(content)) {
 		xtarea.placeholder = "textarea text goes here...";
 	} else {
 		xtarea.value = content;
@@ -91,7 +92,7 @@ bid - the block id, so you can getElementById
 ***************************************/
 
 this.runBlock = function(bid) {
-	// a 'Run Block' button is added to every block. it meant for updating a preview div
+	// a 'Run Block' button is added to every block. it's meant for updating a preview div
 	// you can set this to 'null' to remove the button
 	thisBlock.p.alerts.log('nothing to do...','success');
 };
@@ -184,12 +185,6 @@ this.p
 
 ***************************************/
 
-// 
-
-this.g = {
-	// our simple example requires no public attributes
-};
-
 }
 `;
 
@@ -221,9 +216,13 @@ function loadCustomBlock() {
 
     var blockObject = new BlockFunction();
     console.log(blockObject);
-    blockExtensibles[blockObject.type] = blockObject;
+    
+    Bengine.extensibles[blockObject.type] = blockObject;
 
-    var playEngine = new Bengine(blockExtensibles,blockCustomFunctions,blockOptions);
-    playEngine.blockEngineStart('content','bank/pid/1.0');
+	var extensions = { alerts:alertify };
+	var options = { enableSave: false };
+
+    var playEngine = new Bengine(options,extensions);
+    playEngine.loadBlocksEdit('content','bank/pid-playground/1.0');
     console.log(playEngine);
 }

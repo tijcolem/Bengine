@@ -26,7 +26,6 @@ Bengine.extensibles.files = new function Files() {
 			if(cnt > 0) {
 				thisBlock.d.variables[namespace] = result.data.files;
 				thisBlock.p.alerts.log('complete','success');
-				console.log(thisBlock.d.variables);
 			}
 		},function(error) {
 			thisBlock.p.alerts.alert(error.msg);
@@ -70,11 +69,11 @@ Bengine.extensibles.files = new function Files() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		_private.getFiles(document.getElementById(bid).childNodes[0].value,document.getElementById(bid).childNodes[1].value);
+		_private.getFiles(document.getElementById(bid).childNodes[0].value,document.getElementById(bid).childNodes[2].value);
 	};
 	
 	this.runBlock = function(bid) {
-		_private.getFiles(document.getElementById(bid).childNodes[0].value,document.getElementById(bid).childNodes[1].value);
+		_private.getFiles(document.getElementById(bid).childNodes[0].value,document.getElementById(bid).childNodes[2].value);
 	}
 
 	this.saveContent = function(bid) {

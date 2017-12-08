@@ -1,5 +1,5 @@
-Bengine.extensibles.slide = new function Slide() {
-	this.type = "slide";
+Bengine.extensibles.pdfslide = new function Slide() {
+	this.type = "pdfslide";
 	this.name = "slide";
 	this.category = "media";
 	this.upload = true;
