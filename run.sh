@@ -1,7 +1,16 @@
 #!/bin/sh
 
-SCRIPT=`realpath $0`
+SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 SCRIPTPATH=`dirname $SCRIPT`
+
+# get config file
+if [ $# == 1 ]; then
+    CONFIG="$SCRIPTPATH/$1"
+else
+    CONFIG="$SCRIPTPATH/config.json"
+fi
+
+# set production level
 LEVEL=$(cat $SCRIPTPATH/config.json | grep -E -o "\"level\":\s*\"(\w*)\"" | cut -d'"' -f4)
 
 if [ ${LEVEL:0:1} == "d" ]; then
@@ -15,10 +24,9 @@ else
 	exit 1;
 fi
 
-cd $SCRIPTPATH
+# generate ssl certificates
+DOMAIN=$(cat $SCRIPTPATH/config.json | grep "domain" | cut -d'"' -f4 | cut -d'/' -f3)
+"$SCRIPTPATH"/tools/gencert.sh "$DOMAIN"
 
-if [ $# == 1 ]; then
-	node main $1;
-else
-	node main;
-fi
+cd $SCRIPTPATH
+node main "$CONFIG";
