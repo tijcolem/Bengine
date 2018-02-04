@@ -23,7 +23,9 @@ Bengine.extensibles.video = new function Video() {
 		video.setAttribute("controls","controls");
 
 		var videosource = document.createElement("source");
-		videosource.setAttribute("src",bcontent['url']);
+		if(bcontent['url']) {
+			videosource.setAttribute("src",bcontent['url']);
+		}
 		videosource.setAttribute("type","video/mp4");
 
 		video.appendChild(videosource);

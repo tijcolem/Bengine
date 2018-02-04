@@ -19,7 +19,10 @@ Bengine.extensibles.image = new function Image() {
 	this.insertContent = function(block,bcontent) {
 		var ximg = document.createElement("img");
 		ximg.setAttribute("class","xImg");
-		ximg.src = bcontent['url'];
+		
+		if (bcontent['url']) {
+			ximg.src = bcontent['url'];
+		}
 
 		block.appendChild(ximg);
 

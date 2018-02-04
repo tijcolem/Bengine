@@ -2,6 +2,7 @@ exports.process = function(request,response) {
 	const rest = require('../lib/rest.js');
 	const fs = require('fs');
 	const orequest = require('request');
+	const path = require('path');
     
     // mp3 mp4 jpg
     
@@ -25,7 +26,7 @@ exports.process = function(request,response) {
 		var absdir = './public/content/' + reldir;
 		const initDir = path.isAbsolute(absdir) ? path.sep : '';
 		
-		asbdir.split(path.sep).reduce((parentDir, childDir) => {
+		absdir.split(path.sep).reduce((parentDir, childDir) => {
 			const curDir = path.resolve(parentDir, childDir);
 			if (!fs.existsSync(curDir)) {
 				fs.mkdirSync(curDir);

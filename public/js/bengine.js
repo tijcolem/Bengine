@@ -313,12 +313,19 @@ function Bengine(options,extensions) {
 	// keeps track of previous and current spots for media upload progress
 	_private.helper.position = function(spot) {
 		if(typeof this.prev === 'undefined') {
+			/* initialize on first call */
 			this.prev = 0;
 			this.curr = spot;
+		} else if (spot === 0) {
+			/* reset */
+			this.prev = 0;
+			this.curr = 0;
 		} else if (this.curr !== spot) {
+			/* keep track of previous and current spot */
 			this.prev = this.curr;
 			this.curr = spot;
 		}
+		console.log([spot,this.prev,this.curr]);
 		return [this.prev,this.curr];
 	};
 	
@@ -509,6 +516,7 @@ function Bengine(options,extensions) {
 		/* append block dependencies */
 		var waiting = _private.blockMethod.blockScripts();
 		
+		/* a list of dependency objects in 'waiting', we wait until all are loaded before moving on */
 		for(let w = 0; w < waiting.length; w++) {
 			var ctry = 0;
 			var tries = 100;
@@ -867,9 +875,9 @@ function Bengine(options,extensions) {
 			tries - number of times to wait for wait object before giving up
 		*/
 		function fetchScript(existing,scriptArray,position,wait,tries) {
-			if(wait && typeof window[wait] == 'undefined' && tries < 4) {
+			if(wait && typeof window[wait] == 'undefined' && tries < 100) {
 				tries++;
-				setTimeout(function() { fetchScript(existing,scriptArray,position,wait,tries) },1000);
+				setTimeout(function() { fetchScript(existing,scriptArray,position,wait,tries) },100);
 			} else {
 				var element = scriptArray[position];
 				if(element.source === '' || existing.indexOf(element.source) < 0) {
@@ -900,6 +908,10 @@ function Bengine(options,extensions) {
 			if(_private.extensibles.hasOwnProperty(prop)) {
 				var scriptArray = _private.extensibles[prop].fetchDependencies();
 				if(scriptArray !== null) {
+					
+					// check if scriptArray[index] ? object exists, if it does, no need to fetch
+					
+					
 					fetchScript([],scriptArray,0,'',0);
 					scriptArray.forEach(function(element) {
 						if(element.wait) {
@@ -1569,6 +1581,8 @@ function Bengine(options,extensions) {
 				var val = xmlhttp.responseText.slice(spotArray[0],spotArray[1]).split(",");
 				_private.display.progressFinalize("Not Saved",val[val.length - 1]);
 				_private.helper.counter(true);
+				/* reset position */
+				_private.helper.position(0);
 			};
 
 			xmlhttp.onreadystatechange = function() {
@@ -1585,9 +1599,6 @@ function Bengine(options,extensions) {
 				        case 200:
 				        	var spots = _private.helper.position(xmlhttp.responseText.length);
 							var val = xmlhttp.responseText.slice(spots[0],spots[1]).split(",");
-							
-							/* reset position */
-							_private.helper.position(0); _private.helper.position(0);
 							
 							resolve({msg:'Success',status:200,data:{spot:val[val.length - 1]}});
 							break;
@@ -1670,7 +1681,7 @@ function Bengine(options,extensions) {
 					if(this.duration > _private.options.playableMediaLimit) {
 						_private.alerts.alert(`Videos Must Be Less Than ${_private.options.playableMediaLimit} Seconds`);
 					} else {
-						uploadProcess(bid,blockObj,file);
+						_private.uploadProcess(bid,blockObj,file);
 					}
 				};
 			} else if(checklengthaudio) {
@@ -1678,11 +1689,11 @@ function Bengine(options,extensions) {
 					if(this.duration > _private.options.playableMediaLimit) {
 						_private.alerts.alert(`Videos Must Be Less Than ${_private.options.playableMediaLimit} Seconds`);
 					} else {
-						uploadProcess(bid,blockObj,file);
+						_private.uploadProcess(bid,blockObj,file);
 					}
 				};
 			} else {
-				uploadProcess(bid,blockObj,file);
+				_private.uploadProcess(bid,blockObj,file);
 			}
 			
 			/* resets selection to nothing, in case user decides to upload the same file, onchange will still fire */

@@ -23,7 +23,9 @@ Bengine.extensibles.audio = new function Audio() {
 		audio.setAttribute("controls","controls");
 
 		var audiosource = document.createElement("source");
-		audiosource.setAttribute("src",bcontent['url']);
+		if(bcontent['url']) {
+			audiosource.setAttribute("src",bcontent['url']);
+		}
 		audiosource.setAttribute("type","audio/mpeg");
 
 		audio.appendChild(audiosource);
