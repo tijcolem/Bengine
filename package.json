@@ -28,7 +28,7 @@
   },
   "scripts": {
     "postinstall": "./scripts/postinstall.sh",
-    "prestart": "./scripts/run.sh",
+    "prerestart": "./scripts/postinstall.sh",
     "start": "node main",
     "test": "mocha"
   },
