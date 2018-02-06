@@ -61,15 +61,18 @@ module.exports = function(config) {
 	}
 	
 	/* check "level" */
-	var invalidlevel;
+	var invalidlevel = true;
 	if(typeof config["level"] !== "string") {
 		return {"fatal":"Config error. 'level' must be defined, must be string: [dev|stage|prod]"};
 	} else if(config["level"].indexOf("dev") > -1) {
 		invalidlevel = false;
+		process.env.NODE_ENV = "development";
 	} else if(config["level"].indexOf("sta") > -1) {
 		invalidlevel = false;
+		process.env.NODE_ENV = "development";
 	} else if(config["level"].indexOf("pro") > -1) {
 		invalidlevel = false;
+		process.env.NODE_ENV = "production";
 	}
 	
 	if(invalidlevel) {
