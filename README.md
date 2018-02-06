@@ -38,7 +38,7 @@ npm install
 Change any configuration you need in `config.json`. Then run the back-end server.
 
 ```
-./run.sh
+npm start
 ```
 
 Now go to the index page: [http://localhost:2020](http://localhost:2020)
