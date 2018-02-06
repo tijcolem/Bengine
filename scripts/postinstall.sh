@@ -1,17 +1,17 @@
 #!/bin/sh
-  
-SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
-SCRIPTPATH=`dirname $SCRIPT`
+
+SCRIPT="$0"
+SCRIPTPATH=$(dirname "$SCRIPT")  
 
 # create symlinks to
-ln -sf ../../node_modules/mocha/mocha.css ./public/css
-ln -sf ../../node_modules/mocha/mocha.js ./public/js
-ln -sf ../../node_modules/chai/chai.js ./public/js
+ln -sf ../../node_modules/mocha/mocha.css ${SCRIPTPATH}/../public/css
+ln -sf ../../node_modules/mocha/mocha.js ${SCRIPTPATH}/../public/js
+ln -sf ../../node_modules/chai/chai.js ${SCRIPTPATH}/../public/js
 
 # reset block symlinks
-rm -rf public/blocks/*
-BLOCKS=$(ls -l ./blocks | tail -n +2 | tr -s ' ' | cut -d" " -f9)
-for name in $BLOCKS; do ln -s "../../blocks/$name/$name.js" "./public/blocks/$name.js"; done
+rm -rf ../public/blocks/*
+BLOCKS=$(ls -l "$SCRIPTPATH"/../blocks | tail -n +2 | tr -s ' ' | cut -d" " -f9)
+for name in $BLOCKS; do ln -sf "../../blocks/$name/$name.js" "${SCRIPTPATH}/../public/blocks/$name.js"; done
 unset BLOCKS
 
 # get config file
