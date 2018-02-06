@@ -1,31 +1,31 @@
-BengineConfig.extensibles.video = new function Video() {
+Bengine.extensibles.video = new function Video() {
 	this.type = "video";
 	this.name = "video";
 	this.category = "media";
 	this.upload = true;
+	this.accept = ".avi,.flv,.mov,.mp4,.mpeg,.ogg,.rm,.webm,.wmv";
 
-	var videoObj = this;
-
-	var parseBlock = function(blockText) {
-		return encodeURIComponent(blockText);
-	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText);
+	var thisBlock = this;
+	var _private = {};
+	
+	this.destroy = function() {
+		return;
 	};
 	
 	this.fetchDependencies = function() {
 		return null;
 	}
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {
 		var video = document.createElement("video");
 		video.setAttribute("class","xVid");
 		video.volume = 0.8;
 		video.setAttribute("controls","controls");
 
 		var videosource = document.createElement("source");
-		videosource.setAttribute("src",deparseBlock(content));
+		if(bcontent['url']) {
+			videosource.setAttribute("src",bcontent['url']);
+		}
 		videosource.setAttribute("type","video/mp4");
 
 		video.appendChild(videosource);
@@ -42,20 +42,22 @@ BengineConfig.extensibles.video = new function Video() {
 			mediatag.parentNode.load();
 		}
 	};
+	
+	this.runBlock = null;
 
 	this.saveContent = function(bid) {
 		var mediastr = document.getElementById(bid).children[0].children[0].src;
-		return parseBlock(mediastr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
+		return {'url':mediastr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),"")};
 	};
 
-	this.showContent = function(block,content) {
+	this.showContent = function(block,bcontent) {
 		var video = document.createElement("video");
 		video.setAttribute("class","xVid-show");
 		video.volume = 0.8;
 		video.setAttribute("controls","controls");
 
 		var videosource = document.createElement("source");
-		videosource.setAttribute("src",deparseBlock(content));
+		videosource.setAttribute("src",bcontent['url']);
 		videosource.setAttribute("type","video/mp4");
 
 		video.appendChild(videosource);
@@ -78,8 +80,4 @@ BengineConfig.extensibles.video = new function Video() {
 		}`;
 		return stylestr;
 	};
-	
-	this.f = {};
-	
-	this.g = {};
 };

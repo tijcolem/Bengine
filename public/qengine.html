@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<title>Qengine</title>
+	</head>
+
+	<body class="body" style="background-color:black">
+		<div class="col col-20"></div>
+			<div class="col col-60">
+				<div id="content"></div>
+			</div>
+		<div class="col col-20"></div>
+		
+		<footer class="footer"></footer>
+
+		<!-- get extensions for bengine -->
+		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.core.css" defer>
+		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.default.css" defer>
+		<script src="https://rawgit.com/fabien-d/alertify.js/0.3/src/alertify.js"></script>
+		<script src="js/bengine-default-display.js"></script>
+		
+		<!-- get bengine & blocks -->
+		<script src="js/bengine.js"></script>
+		<script src="blocks/asciimath.js"></script> <!-- only in here to show that it won't be included in Qengine File -->
+		<script src="blocks/qans.js"></script>
+		<script src="blocks/qcss.js"></script>
+		<script src="blocks/qfiles.js"></script>
+		<script src="blocks/qhtml.js"></script>
+		<script src="blocks/qpython2.js"></script>
+		<script src="blocks/qsage.js"></script>
+		<script src="blocks/qstep.js"></script>
+		<script src="blocks/qstore.js"></script>
+		
+		<!-- load bengine in 'qengine' mode -->
+		<script>
+			var extensions = { alerts:alertify, display:BengineDefaultDisplay };
+			
+			var IE = new Qengine({},extensions);
+			IE.loadBlocksEdit("content",'bank/pid-qengine/1.0'); // engine dom id, path to assets
+			
+			window.IE = IE; // for debugging
+		</script>
+	
+		<!-- mocha tests -->
+		<div id="mocha"></div>
+		<link rel="stylesheet" href="css/mocha.css">
+		<script src="js/mocha.js"></script>
+		<script src="js/chai.js"></script>
+		<script>mocha.setup('bdd')</script>
+		<script src="front-test/index.js"></script>
+	</body>
+</html>

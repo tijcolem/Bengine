@@ -1,28 +1,38 @@
-BengineConfig.extensibles.latex = new function Latex() {
+Bengine.extensibles.latex = new function Latex() {
 	this.type = "latex";
 	this.name = "latex";
-	this.category = "math";
+	this.category = "text";
 	this.upload = false;
+	this.accept = null;
 
-	var latexObj = this;
-	var blocklimit = 2097;
+	var thisBlock = this;
+	var _private = {};
+	
+	_private.blocklimit = 2097;
+	
+	_private.renderLatex = function(block) {
+			/* get the math notation and prepend/append double dollars, which is how MathJax identifies LaTeX markup language */
+			var str = "$$" + block.textContent + "$$";
 
-	var parseBlock = function(blockText) {
-		var element = document.createElement('div');
-		element.innerHTML = blockText.replace(/\\/g,"\\\\").replace(/</g,"@@LT").replace(/>/g,"@@RT").replace(/<br>/g,"@@BR");
-		return encodeURIComponent(element.textContent).replace(/'/g,"%27");
-	};
+			/* put the latex into the image preview block */
+			var imageBlock = block.parentNode.childNodes[0];
+			imageBlock.innerHTML = str;
 
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText).replace(/\\\\/g,'\\').replace(/@@LT/g,"<").replace(/@@RT/g,">").replace(/@@BR/g,"<br>").replace(/%27/g,"'");
+			/* render the image */
+			MathJax.Hub.Queue(["Typeset",MathJax.Hub,imageBlock]);
+		}
+
+	this.destroy = function() {
+		return;
 	};
 
 	this.fetchDependencies = function() {
 		var mathjax = {
 			inner: '',
 			integrity: '',
-			source: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML',
-			type: 'text/javascript'
+			source: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML',
+			type: 'text/javascript',
+			wait: 'MathJax'
 		};
 		var mathjaxConfig = {
 			inner: `MathJax.Hub.Config({tex2jax:{processClass:'latexImage',ignoreClass:'body'},messageStyle:'none'});`,
@@ -34,26 +44,25 @@ BengineConfig.extensibles.latex = new function Latex() {
 		return [mathjax,mathjaxConfig];
 	}
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {
 		var latexpreview = document.createElement('div');
 		latexpreview.setAttribute('class','latexImage');
 
 		var latexBlock = document.createElement('div');
 		latexBlock.setAttribute('class','xLtx');
-		latexBlock.onblur = function() {
-			latexObj.f.renderLatex(this);
-		};
 		latexBlock.contentEditable = true;
 		/* defaul text */
-		if(BengineConfig.options.defaultText && content === "") {
-			latexBlock.innerHTML = 'LaTeX \\ Mark \\ Up: \\quad \\frac{d}{dx}\\left( \\int_{0}^{x} f(u)\\,du\\right)=f(x)';
+		if(thisBlock.p.emptyObject(bcontent)) {
+			if(thisBlock.d.options.defaultText) {
+				latexBlock.innerHTML = 'LaTeX \\ Mark \\ Up: \\quad \\frac{d}{dx}\\left( \\int_{0}^{x} f(u)\\,du\\right)=f(x)';
+			}
 		} else {
-			latexBlock.innerHTML = deparseBlock(content);
+			latexBlock.innerHTML = bcontent['content'];
 		}
 
 		/* set limit function on keydown event */
 		function setLimit(block,event) {
-			if(event.keyCode !== 8 && block.innerText.length > blocklimit) {
+			if(event.keyCode !== 8 && block.innerText.length > _private.blocklimit) {
 				event.preventDefault();
 			}
 		}
@@ -75,7 +84,7 @@ BengineConfig.extensibles.latex = new function Latex() {
 				ptext = event.clipboardData.getData('text/plain');
 			}
 
-			if((this.innerText.length + ptext.length) > blocklimit) {
+			if((this.innerText.length + ptext.length) > _private.blocklimit) {
 				return false;
 			}
 			return true;
@@ -88,28 +97,30 @@ BengineConfig.extensibles.latex = new function Latex() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		this.f.renderLatex(document.getElementById(bid).childNodes[1]);
+		_private.renderLatex(document.getElementById(bid).childNodes[1]);
 	};
+	
+	this.runBlock = function(bid) {
+		_private.renderLatex(document.getElementById(bid).childNodes[1]);
+	}
 
 	this.saveContent = function(bid) {
-		/* replace() is for escaping backslashes */
-		var blockContent = document.getElementById(bid).children[1].innerHTML;
-		return parseBlock(blockContent);
+		return {'content':document.getElementById(bid).children[1].innerHTML};
 	};
 
-	this.showContent = function(block,content) {
+	this.showContent = function(block,bcontent) {
 		var latexpreview = document.createElement('div');
 		latexpreview.setAttribute('class','latexImage-show');
 
 		var latexBlock = document.createElement('div');
 		latexBlock.setAttribute('class','xLtx');
 		latexBlock.setAttribute('style','display:none;visibility:hidden;');
-		latexBlock.innerHTML = deparseBlock(content);
+		latexBlock.innerHTML = bcontent['content'];
 
 		block.appendChild(latexpreview);
 		block.appendChild(latexBlock);
 
-		this.f.renderLatex(latexBlock);
+		_private.renderLatex(latexBlock);
 
 		return block;
 	};
@@ -120,11 +131,10 @@ BengineConfig.extensibles.latex = new function Latex() {
 			width: 100%;
 			height: auto;
 			border: 1px solid black;
-			border-radius: 2px;
 			background-color: white;
 
 			padding: 8px 6px;
-			margin: 2px 0 0 0;
+			margin: 0;
 			box-sizing: border-box;
 		}
 
@@ -133,7 +143,6 @@ BengineConfig.extensibles.latex = new function Latex() {
 			width: 100%;
 			height: auto;
 			border: 1px solid black;
-			border-radius: 2px;
 			background-color: white;
 
 			padding: 8px 6px;
@@ -142,20 +151,4 @@ BengineConfig.extensibles.latex = new function Latex() {
 		}`;
 		return stylestr;
 	};
-
-	this.f = {
-		renderLatex: function(block) {
-			/* get the math notation and prepend/append double dollars, which is how MathJax identifies LaTeX markup language */
-			var str = "$$" + block.textContent + "$$";
-
-			/* put the latex into the image preview block */
-			var imageBlock = block.parentNode.childNodes[0];
-			imageBlock.innerHTML = str;
-
-			/* render the image */
-			MathJax.Hub.Queue(["Typeset",MathJax.Hub,imageBlock]);
-		}
-	};
-	
-	this.g = {};
 };

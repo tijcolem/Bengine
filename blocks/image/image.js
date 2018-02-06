@@ -1,27 +1,28 @@
-BengineConfig.extensibles.image = new function Image() {
+Bengine.extensibles.image = new function Image() {
 	this.type = "image";
 	this.name = "image";
 	this.category = "media";
 	this.upload = true;
+	this.accept = ".bmp,.bmp2,.bmp3,.jpeg,.jpg,.pdf,.png,.svg";
 
-	var imageObj = this;
+	var thisBlock = this;
+	var _private = {};
 	
-	var parseBlock = function(blockText) {
-		return encodeURIComponent(blockText);
-	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText);
+	this.destroy = function() {
+		return;
 	};
 	
 	this.fetchDependencies = function() {
 		return null;
 	}
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {
 		var ximg = document.createElement("img");
 		ximg.setAttribute("class","xImg");
-		ximg.src = deparseBlock(content);
+		
+		if (bcontent['url']) {
+			ximg.src = bcontent['url'];
+		}
 
 		block.appendChild(ximg);
 
@@ -34,17 +35,19 @@ BengineConfig.extensibles.image = new function Image() {
 			imagetag.src = data;
 		}
 	};
+	
+	this.runBlock = null;
 
 	this.saveContent = function(bid) {
 		/* replace() is for escaping backslashes and making relative path */
 		var imagestr = document.getElementById(bid).children[0].src;
-		return parseBlock(imagestr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),""));
+		return {'url':imagestr.replace(location.href.substring(0,location.href.lastIndexOf('/') + 1),"")};
 	};
 
 	this.showContent = function(block,content) {
 		var ximg = document.createElement("img");
 		ximg.setAttribute("class","xImg-show");
-		ximg.src = deparseBlock(content);
+		ximg.src = bcontent['url'];
 
 		block.appendChild(ximg);
 
@@ -65,8 +68,4 @@ BengineConfig.extensibles.image = new function Image() {
 		}`;
 		return stylestr;
 	};
-	
-	this.f = {};
-	
-	this.g = {};
 };

@@ -1,28 +1,42 @@
-BengineConfig.extensibles.xmath = new function Xmath() {
+Bengine.extensibles.xmath = new function Xmath() {
 	this.type = "xmath";
 	this.name = "asciimath";
-	this.category = "math";
+	this.category = "text";
 	this.upload = false;
+	this.accept = null;
 
-	var xmathObj = this;
-	var blocklimit = 2047;
+	var thisBlock = this;
+	var _private = {};
+	
+	_private.blocklimit = 2047;
+	
+	/*
+		private methods
+	*/
+	
+	var renderMath = function(block) {
+		/* get the math notation and prepend/append backticks, which is how MathJax identifies ASCIIMath markup language */
+		var str = "`" + block.textContent + "`";
 
-	var parseBlock = function(blockText) {
-		var element = document.createElement('div');
-		element.innerHTML = blockText.replace(/\\/g,"\\\\").replace(/</g,"@@LT").replace(/>/g,"@@RT").replace(/<br>/g,"@@BR");
-		return encodeURIComponent(element.textContent).replace(/'/g,"%27");
+		/* put the asciimath into the image preview block */
+		var imageBlock = block.parentNode.childNodes[0];
+		imageBlock.innerHTML = str;
+
+		/* render the image */
+		MathJax.Hub.Queue(["Typeset",MathJax.Hub,imageBlock]);
 	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText).replace(/\\\\/g,'\\').replace(/@@LT/g,"<").replace(/@@RT/g,">").replace(/@@BR/g,"<br>").replace(/%27/g,"'");
+	
+	this.destroy = function() {
+		return;
 	};
 	
 	this.fetchDependencies = function() {
 		var mathjax = {
 			inner: '',
 			integrity: '',
-			source: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML',
-			type: 'text/javascript'
+			source: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML',
+			type: 'text/javascript',
+			wait: 'MathJax'
 		};
 		var mathjaxConfig = {
 			inner: `MathJax.Hub.Config({mml2jax:{processClass:'mathImage',ignoreClass:'xample'},asciimath2jax:{processClass:'mathImage',ignoreClass:'body'},messageStyle:'none'});`,
@@ -34,26 +48,26 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 		return [mathjax,mathjaxConfig];
 	};
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {		
 		var mathpreview = document.createElement('div');
 		mathpreview.setAttribute('class','mathImage');
 
 		var mathBlock = document.createElement('div');
 		mathBlock.setAttribute('class','xMat');
-		mathBlock.onblur = function() {
-			xmathObj.f.renderMath(this);
-		};
+		
 		mathBlock.contentEditable = true;
 		/* defaul text */
-		if(BengineConfig.options.defaultText && content === "") {
-			mathBlock.innerHTML = 'AsciiMath \\ Mark \\ Up: \\ \\ \\ sum_(i=1)^n i^3=((n(n+1))/2)^2';
+		if(thisBlock.p.emptyObject(bcontent)) {
+			if(thisBlock.d.options.defaultText) {
+				mathBlock.innerHTML = 'AsciiMath \\ Mark \\ Up: \\ \\ \\ sum_(i=1)^n i^3=((n(n+1))/2)^2';
+			}
 		} else {
-			mathBlock.innerHTML = deparseBlock(content);
+			mathBlock.innerHTML = bcontent['content'];
 		}
 
 		/* set limit function on keydown event */
 		function setLimit(block,event) {
-			if(event.keyCode !== 8 && block.innerText.length > blocklimit) {
+			if(event.keyCode !== 8 && block.innerText.length > _private.blocklimit) {
 				event.preventDefault();
 			}
 		}
@@ -75,7 +89,7 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 				ptext = event.clipboardData.getData('text/plain');
 			}
 
-			if((this.innerText.length + ptext.length) > blocklimit) {
+			if((this.innerText.length + ptext.length) > _private.blocklimit) {
 				return false;
 			}
 			return true;
@@ -88,28 +102,30 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		this.f.renderMath(document.getElementById(bid).childNodes[1]);
+		renderMath(document.getElementById(bid).childNodes[1]);
+	};
+	
+	this.runBlock = function(bid) {
+		renderMath(document.getElementById(bid).childNodes[1]);
 	};
 
 	this.saveContent = function(bid) {
-		/* replace() is for escaping backslashes */
-		var blockContent = document.getElementById(bid).children[1].innerHTML;
-		return parseBlock(blockContent);
+		return {'content':document.getElementById(bid).children[1].innerHTML};
 	};
 
-	this.showContent = function(block,content) {
+	this.showContent = function(block,bcontent) {
 		var mathpreview = document.createElement('div');
 		mathpreview.setAttribute('class','mathImage-show');
 
 		var mathBlock = document.createElement('div');
 		mathBlock.setAttribute('class','xMat');
 		mathBlock.setAttribute('style','display:none;visibility:hidden;');
-		mathBlock.innerHTML = deparseBlock(content);
+		mathBlock.innerHTML = bcontent['content'];
 
 		block.appendChild(mathpreview);
 		block.appendChild(mathBlock);
 
-		this.f.renderMath(mathBlock);
+		renderMath(mathBlock);
 
 		return block;
 	};
@@ -120,11 +136,10 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 			width: 100%;
 			height: auto;
 			border: 1px solid black;
-			border-radius: 2px;
 			background-color: white;
 
 			padding: 8px 6px;
-			margin: 2px 0 0 0;
+			margin: 0;
 			box-sizing: border-box;
 
 			font-family: Arial, Helvetica, sans-serif;
@@ -135,7 +150,6 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 			width: 100%;
 			height: auto;
 			border: 1px solid black;
-			border-radius: 2px;
 			background-color: white;
 			
 			text-align:center;
@@ -146,20 +160,4 @@ BengineConfig.extensibles.xmath = new function Xmath() {
 		}`;
 		return stylestr;
 	};
-
-	this.f = {
-		renderMath: function(block) {
-			/* get the math notation and prepend/append backticks, which is how MathJax identifies ASCIIMath markup language */
-			var str = "`" + block.textContent + "`";
-
-			/* put the asciimath into the image preview block */
-			var imageBlock = block.parentNode.childNodes[0];
-			imageBlock.innerHTML = str;
-
-			/* render the image */
-			MathJax.Hub.Queue(["Typeset",MathJax.Hub,imageBlock]);
-		}
-	};
-	
-	this.g = {};
 };

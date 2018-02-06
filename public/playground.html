@@ -5,6 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		
 		<style>
+			body { background-color:black; }
 			button { width: 100%; height: 32px; font-size: 1em; }
 			footer, .footer { height: 300px; }
 		</style>
@@ -17,25 +18,26 @@
 	</head>
 
 	<body class="body">
-		<div id="play" style="border: 2px solid black"></div>
-		
-		<button onclick="loadCustomBlock();">Load Custom Block</button>
-		
-		<div id="content"></div>
+		<div class="col col-10"></div>
+		<div class="col col-80">
+			<div id="play" style="border: 2px solid black"></div>
+			<button onclick="loadCustomBlock();">Load Custom Block</button>
+			<div id="content"></div>
+		</div>
+		<div class="col col-10"></div>
 		
 		<footer class="footer"></footer>
 
-		<!-- load bengine -->
-		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.core.css">
-		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.default.css">
+		<!-- get extensions for bengine -->
+		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.core.css" defer>
+		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.default.css" defer>
 		<script src="https://rawgit.com/fabien-d/alertify.js/0.3/src/alertify.js"></script>
+		
+		<!-- load bengine -->
 		<script src="js/bengine.js"></script>
 		<script>
-			var blockExtensibles = {};
-			var blockCustomFunctions = {};
-			var blockOptions = {
-			    enableSave:false
-			};
+			var extensions = { alerts:alertify };
+			new Bengine({},extensions); // just for loading styles
 		</script>
 		<script src="js/playground.js"></script>
 	

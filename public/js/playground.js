@@ -1,16 +1,39 @@
 var playBlockStartCode = `function() {
+/*
+	Welcome!
+	
+	Press the 'Load Custom Block' button to load this block into Bengine.
+	Bengine will start below after you click the button.
+	Open the developer's console to view extra info.
+*/
 
 /**************************************
-type (string) - should match property name you add to extensibles, must be 5 letters
+type (string) - should match property name you add to extensibles, must be 5 letters or less
 name (string) - the name that appears to the user to create your block
-category (string) - must be one of these [code, design, math, media, text, quiz]
+category (string) - must be one of these [code, media, text, qengine]
 upload (boolean) - whether this block requires uploading media
+accept (string) - comma-separated extensions to accept for uploading media
 ***************************************/
 
 this.type = "tarea";
 this.name = "textarea";
 this.category = "text";
 this.upload = false;
+this.accept = null;
+
+var thisBlock = this; // it's helpful to keep a reference to this object
+var _private = {}; // attach private methods to this
+
+/**************************************
+destroy(bid)
+this function is run when a user deletes the block
+
+bid - the block id, so you can getElementById
+***************************************/
+
+this.destroy = function(bid) {
+	// run any cleanup code for destroying your block
+};
 
 /**************************************
 fetchDependencies()
@@ -37,10 +60,11 @@ content - any content from the database
 this.insertContent = function(block,content) {
 	var xtarea = document.createElement("textarea");
 	xtarea.setAttribute("class","xTar");
-	xtarea.value = content;
 	
-	if(content === "") {
+	if(thisBlock.p.emptyObject(content)) {
 		xtarea.placeholder = "textarea text goes here...";
+	} else {
+		xtarea.value = content;
 	}
 
 	block.appendChild(xtarea);
@@ -58,6 +82,19 @@ data - this is always null, it might become something in later versions
 
 this.afterDOMinsert = function(bid,data) {
 	// this simple example requires no code after appending block to dom
+};
+
+/**************************************
+runBlock(bid)
+this function is run when the user click the 'Run Block' button
+
+bid - the block id, so you can getElementById
+***************************************/
+
+this.runBlock = function(bid) {
+	// a 'Run Block' button is added to every block. it's meant for updating a preview div
+	// you can set this to 'null' to remove the button
+	thisBlock.p.alerts.log('nothing to do...','success');
 };
 
 /**************************************
@@ -136,14 +173,17 @@ this.styleBlock = function() {
 };
 
 /**************************************
-use this to attach functions you need during runtime.
-you can use them by calling this.f.myfunction in other parts of this extensible.
-you may have to use javascript's .bind() function when calling it.
-***************************************/
+When Bengine loads this block, it will attach the following:
 
-this.f = {
-    // our simple example requires no runtime functions
-};
+this.d
+	- points to Bengine public methods and properties
+	- used for retrieving or setting data that is shared between blocks
+	- methods are all getters for data that cannot be set
+
+this.p
+	- points to methods that are commonly used in many blocks (reduces redundancy)
+
+***************************************/
 
 }
 `;
@@ -169,15 +209,20 @@ function loadCustomBlock() {
         var BlockFunction = eval('(' + code + ')');
     } catch (e) {
         if (e instanceof SyntaxError) {
-            alertify.alert(e.message);
+            window.alert(e.message);
         }
         return;
     }
 
     var blockObject = new BlockFunction();
     console.log(blockObject);
-    blockExtensibles[blockObject.type] = blockObject;
+    
+    Bengine.extensibles[blockObject.type] = blockObject;
 
-    var playEngine = new Bengine(blockExtensibles,blockCustomFunctions,blockOptions);
-    playEngine.blockEngineStart('content',['page',1,1],[]);
+	var extensions = { alerts:alertify };
+	var options = { enableSave: false };
+
+    var playEngine = new Bengine(options,extensions);
+    playEngine.loadBlocksEdit('content','bank/pid-playground/1.0');
+    console.log(playEngine);
 }

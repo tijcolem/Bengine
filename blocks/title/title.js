@@ -1,32 +1,39 @@
-BengineConfig.extensibles.title = new function Title() {
+Bengine.extensibles.title = new function Title() {
 	this.type = "title";
 	this.name = "title";
 	this.category = "text";
 	this.upload = false;
+	this.accept = null;
 
-	var titleObj = this;
-	var blocklimit = 64;
-
-	var parseBlock = function(blockText) {
-		var element = document.createElement('div');
-		element.innerHTML = blockText.replace(/</g,"@@LT").replace(/>/g,"@@RT").replace(/<br>/g,"@@BR");
-		return encodeURIComponent(element.textContent).replace(/'/g,"%27");
-	};
-
-	var deparseBlock = function(blockText) {
-		return decodeURIComponent(blockText).replace(/@@LT/g,"<").replace(/@@RT/g,">").replace(/@@BR/g,"<br>").replace(/%27/g,"'");
+	var thisBlock = this;
+	var _private = {};
+	
+	_private.blocklimit = 64;
+	
+	_private.componentToHex = function(c) {
+	    var hex = c.toString(16);
+	    return hex.length == 1 ? "0" + hex : hex;
+	}
+	
+	// expects [r,g,b]
+	_private.rgbToHex = function(arr) {
+	    return _private.componentToHex(arr[0]) + _private.componentToHex(arr[1]) + _private.componentToHex(arr[2]);
+	}
+	
+	this.destroy = function() {
+		return;
 	};
 	
 	this.fetchDependencies = function() {
 		return null;
 	}
 
-	this.insertContent = function(block,content) {
+	this.insertContent = function(block,bcontent) {
 		var str;
-		if(content) {
-			str = '<input type="text" class="xTit" maxlength="' + blocklimit + '" value="' + deparseBlock(content) + '">';
+		if(!thisBlock.p.emptyObject(bcontent)) {
+			str = '<input type="text" class="xTit" maxlength="' + _private.blocklimit + '" value="' + bcontent['content'] + '">';
 		} else {
-			str = '<input type="text" class="xTit" maxlength="' + blocklimit + '" placeholder="Title">';
+			str = '<input type="text" class="xTit" maxlength="' + _private.blocklimit + '" placeholder="Title">';
 		}
 
 		block.innerHTML = str;
@@ -37,14 +44,30 @@ BengineConfig.extensibles.title = new function Title() {
 	this.afterDOMinsert = function(bid,data) {
 		/* nothing to do */
 	};
+	
+	this.runBlock = function(bid) {
+		/* nothing to do */
+	}
 
 	this.saveContent = function(bid) {
-		var blockContent = document.getElementById(bid).children[0].value;
-		return parseBlock(blockContent);
+		return {'content':document.getElementById(bid).children[0].value};
 	};
 
-	this.showContent = function(block,content) {
-		var str = '<div class="xTit-show">' + deparseBlock(content) + '</div>';
+	this.showContent = function(block,bcontent) {		
+		try {
+			var bcolor = window.getComputedStyle(document.getElementsByTagName('body')[0])['background-color'];
+			var cvalue = parseInt(_private.rgbToHex(bcolor.match(/[0-9]+/g)), 16);
+		} catch(err) {
+			var cvalue = 0;
+		}
+
+		if(cvalue > 10027008) {
+			var titleStyle = 'xTit-dark';
+		} else {
+			var titleStyle = 'xTit-bright';
+		}
+		
+		var str = `<div class="xTit-show ${titleStyle}">` + bcontent['content'] + '</div>';
 		block.innerHTML = str;
 
 		return block;
@@ -56,7 +79,6 @@ BengineConfig.extensibles.title = new function Title() {
 			width: 100%;
 			height: 32px;
 			border: 1px solid black;
-			border-radius: 2px;
 
 			padding: 4px 6px;
 			margin: 0px;
@@ -77,23 +99,26 @@ BengineConfig.extensibles.title = new function Title() {
 			background-color: rgba(118, 118, 118, 0.15);
 			border: 1px solid black;
 			border-bottom-color: rgba(118, 118, 118, 0.15);
-			border-radius: 2px;
-
 			padding: 6px 6px;
 			margin: 0px;
 			box-sizing: border-box;
-
 			text-align: center;
-
 			font-family: Arial, Helvetica, sans-serif;
 			font-size: 2em;
 			font-weight: 900;
+		}
+		
+		.xTit-bright {
+			background-color: white;
 			color: black;
-		}`;
+		}
+		
+		.xTit-dark {
+			background-color: black;
+			color: white;
+		}
+		
+		`;
 		return stylestr;
 	};
-	
-	this.f = {};
-	
-	this.g = {};
 };
