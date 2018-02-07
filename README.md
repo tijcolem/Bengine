@@ -1,24 +1,15 @@
 
-[![Build Status](https://travis-ci.org/efossas/Bengine.svg?branch=master)](https://travis-ci.org/efossas/Bengine)
+[![Build Status](https://travis-ci.org/academicsystems/Bengine.svg?branch=master)](https://travis-ci.org/academicsystems/Bengine)
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/BlockEngine/Lobby)
 
 # Bengine
 A browser block engine.
 
-Bengine handles the creating and deleting of "blocks", which are just html elements. You can create custom blocks with special javascript functionality and add them to Bengine. Those custom blocks are coded into constructor objects which are called "extensibles".
+The purpose of Bengine is to provide a simple platform for creating dynamic web resources.
 
-Bengine also supports Opaque, LTI, & API protocols for acting as a quiz engine for learning management systems.
+Bengine handles the creating and deleting of "blocks", which are just html elements. You can view the available block types in the "blocks" folder. You can always create your own block if you don't see the functionality you want.
 
-For a simple example of the block engine, visit [wisepool playground](http://wisepool.io/play).
-
-## Wanted Extensibles
-
-If you would like to contribute to this project, please consider coding the following wanted extensibles:
-
-- PythonTutor block
-- Chartjs block
-- Blockly block
-- draw.io block
+Bengine also works as a front-end for developing and testing dynamic questions that work with Qengine.
 
 ## Getting Started Locally
 
@@ -38,7 +29,7 @@ npm install
 Change any configuration you need in `config.json`. Then run the back-end server.
 
 ```
-./run.sh
+npm start
 ```
 
 Now go to the index page: [http://localhost:2020](http://localhost:2020)
