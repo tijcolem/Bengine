@@ -39,7 +39,7 @@ switch(process.argv.length) {
 		configFile = process.argv[2];
 		break;
 	case 2:
-		configFile = "config.json";
+		configFile = "config/config.json";
 		break;
 	default:
 		crash("Usage: node main [config file name]");
