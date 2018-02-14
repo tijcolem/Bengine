@@ -5,7 +5,7 @@ chai.use(chaihttp);
 
 const fs = require('fs');
 
-var config = JSON.parse(fs.readFileSync('config.json'));
+var config = JSON.parse(fs.readFileSync('config/config.json'));
 var server = require('../server.js')(config);
 
 describe('Class',function() {
