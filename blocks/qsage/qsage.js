@@ -8,7 +8,7 @@ Bengine.extensibles.sage = new function Sage() {
 	var thisBlock = this;
 	var _private = {};
 	
-	_private.runCode(bid) {
+	_private.runCode = function(bid) {
 		var data = {};
 		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
 		data['namespace'] = document.getElementById(bid).children[1].value;
@@ -26,7 +26,7 @@ Bengine.extensibles.sage = new function Sage() {
 		},function(error) {
 			thisBlock.p.alerts.alert(error.msg);
 		});
-	}
+	};
 	
 	this.destroy = function() {
 		return;
@@ -46,7 +46,7 @@ Bengine.extensibles.sage = new function Sage() {
 		};
 		
 		return [cmjs,pylang];
-	}
+	};
 
 	this.insertContent = function(block,bcontent) {
 	    var sageBlock = document.createElement("div");
@@ -106,7 +106,7 @@ Bengine.extensibles.sage = new function Sage() {
 	
 	this.runBlock = function(bid) {
 		_private.runCode(bid);
-	}
+	};
 
 	this.saveContent = function(bid) {
 		var blockContent = document.getElementById(bid).children[0].children[0].CodeMirror.getValue();
