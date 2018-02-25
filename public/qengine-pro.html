@@ -37,6 +37,7 @@
 				if(result.length > 0) window.alert("Bengine was unable to load these blocks: " + result);
 
 				new Qengine({},{
+					alerts: alertify,
 					display:BengineDefaultDisplay 
 				}).loadBlocksEdit("content",'bank/pid-qengine/1.0'); // engine DOM id, path to assets
 			});
