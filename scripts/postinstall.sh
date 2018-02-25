@@ -23,3 +23,6 @@ unset BLOCKS
 DOMAIN=$(cat ./config/config.json | grep "domain" | cut -d'"' -f4 | cut -d'/' -f3)
 ./tools/gencert.sh "$DOMAIN"
 
+# create optimized versions
+node ./tools/optimize.js
+

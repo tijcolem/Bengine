@@ -121,6 +121,11 @@ A list of supported programming languages can be found here: https://github.com/
 		_private.setMode(block);
 	}
 
+	this.runData = function(data,iframe) {
+		//// needs implementing
+		return null;
+	};
+
 	this.saveContent = function(bid) {
 		var blockMode = document.getElementById(bid).children[0].value;
 		var blockContent = document.getElementById(bid).children[1].children[0].CodeMirror.getValue();

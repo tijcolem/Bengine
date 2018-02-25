@@ -132,6 +132,11 @@ Bengine.extensibles.xcode = new function Xcode() {
 		let codeBlock = document.getElementById(bid).childNodes[0];
 		_private.renderCode(codeBlock);
 	}
+	
+	this.runData = function(data,iframe) {
+		//// needs implementing
+		return null;
+	};
 
 	this.saveContent = function(bid) {
 		return {'content':_private.removeHighlights(document.getElementById(bid).children[0].innerHTML)};

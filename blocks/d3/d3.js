@@ -247,6 +247,11 @@ Z	.00074`;
 	this.runBlock = function(bid) {
 		renderD3(document.getElementById(bid));
 	};
+	
+	this.runData = function(data,iframe) {
+		//// needs implementing
+		return null;
+	};
 
 	this.saveContent = function(bid) {
 		let content = document.getElementById(bid).children[1].children[0].CodeMirror.getValue();

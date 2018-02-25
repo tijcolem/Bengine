@@ -36,6 +36,15 @@ Bengine.extensibles.qstep = new function Qstep() {
 	};
 	
 	this.runBlock = null;
+	
+	this.runData = function(data,iframe,task) {
+		var result = null;
+		if(thisBlock.p.checkConditional(data)) {
+			result = data.content;
+		}
+		task.done = true;
+		return result;
+	};
 
 	this.saveContent = function(bid) {
 		return {'content':document.getElementById(bid).children[0].value.split("\n")[0]};

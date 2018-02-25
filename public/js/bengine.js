@@ -9,8 +9,9 @@
 	_public
 		variables				generated variables
 		
-		loadBlocksShow			load block data in show mode
 		loadBlocksEdit			load block data in edit mode
+		loadBlocksShow			load block data in show mode for Bengine
+		loadQuizShow			load block data in show mode for Qengine
 		createQengineFile		opens new page with Qengine File of blocks
 	
 	_private
@@ -29,40 +30,50 @@ function Bengine(options,extensions) {
 	
 	/*** Section: Attributes ***/
 	
-	var _public = {};
-	var _private = {};
+	var _public = {};    // public Bengine
+	var _protected = {}; // internal Bengine use and blocks can use
+	var _private = {};   // private internal Bengine
 	
 	// initialize public generated variables
-	_public.variables = {};
-	_public.variables.qengine = {};
-	_public.variables.qengine.randomseed = Math.floor(Math.random() * 4294967296);
-	this.variables = _public.variables;
+	_protected.variables = {};
+	_protected.variables.qengine = {};
+	_protected.variables.qengine.randomseed = Math.floor(Math.random() * 4294967296);
 
 	// initialize options
-	_private.options = {};
+	_protected.options = {};
 	if(typeof options !== 'object') var coptions = {}; else var coptions = Object.assign({},options);
-	_private.options.blockLimit = coptions.blockLimit || 16;
-	_private.options.defaultText = (coptions.defaultText !== false);
-	_private.options.enableAutoSave = coptions.enableSave ||  false;
-	_private.options.enableSingleView = coptions.enableSingleView || false;
-	_private.options.loadStyles = (coptions.loadStyles !== false);
-	_private.options.mediaLimit = coptions.mediaLimit || 100; // mb
-	_private.options.mode = coptions.mode || 'bengine';
-	_private.options.playableMediaLimit = coptions.playableMediaLimit || 180; // seconds
-	_private.options.swidth = coptions.swidth || "900px";
+	_protected.options.blockLimit = coptions.blockLimit || 16;
+	_protected.options.defaultText = (coptions.defaultText !== false);
+	_protected.options.enableAutoSave = coptions.enableSave ||  false;
+	_protected.options.enableSingleView = coptions.enableSingleView || false;
+	_protected.options.loadStyles = (coptions.loadStyles !== false);
+	_protected.options.mediaLimit = coptions.mediaLimit || 100; // mb
+	_protected.options.mode = coptions.mode || 'bengine';
+	_protected.options.playableMediaLimit = coptions.playableMediaLimit || 180; // seconds
+	_protected.options.swidth = coptions.swidth || "900px";
 	
 	// initialize private variables
 	_private.categoryCounts = {
 		media:0,
 		text:0,
-		quiz:0
+		quiz:0,
+		unknown:0
 	};
 	_private.engineID = '';
 	_private.pagePath = '';
+	_private.quizData = {
+		data:{}, // quizData, stored for processing later steps or reprocessing current step
+		grade:null,
+		stepConditional:"",
+		stepCurrent:0, // index in data of current step
+		stepNext:null, // index in data of next step, null=unknown, -1=no more steps
+		submitData:{}, // stores form data submitted by student on quiz
+		store:[]
+	}
 	
 	// qengine blocks use these
-	_public.getEngineID = function() { return _private.engineID; }
-	_public.getPagePath = function() { return _private.pagePath; }
+	_protected.getEngineID = function() { return _private.engineID; }
+	_protected.getPagePath = function() { return _private.pagePath; }
 	
 	// initialize objects that will hold methods
 	_private.blockMethod = {};
@@ -79,7 +90,7 @@ function Bengine(options,extensions) {
 	_private.extensibles = Object.assign({},Bengine.extensibles);
 	
 	var validExtAttr = [
-		"type",
+		"type", // 
 		"name",
 		"category",
 		"upload",
@@ -89,6 +100,7 @@ function Bengine(options,extensions) {
 		"insertContent",
 		"afterDOMinsert",
 		"runBlock",
+		"runData",
 		"saveContent",
 		"showContent",
 		"styleBlock"
@@ -122,11 +134,35 @@ function Bengine(options,extensions) {
 		// add methods to the extensible
 		_private.extensibles[prop].p = _private.extAPI;
 		
-		// add public Bengien attributes to extensible
-		_private.extensibles[prop].d = _public;
-		_private.extensibles[prop].d.options = _private.options;
+		// add public Bengine attributes to extensible
+		_private.extensibles[prop].d = _protected;
 		
 	})(prop);
+	
+	// create blank extensible for blocks that are unknown or couldn't be loaded
+	_private.blockMethod.unknownBlock = function(type) {
+		this.type = type;
+		this.name = type;
+		this.category = "unknown";
+		this.upload = false;
+		this.accept = null;
+		
+		this.destroy = function() {return null;}
+		this.fetchDependencies = function() {return null;}
+		this.insertContent = function(block,bcontent) {
+			block.innerHTML = "<p class='bengine_unknown_block'>unknown block</p>";
+			return block;
+		}
+		this.afterDOMinsert = function(bid,data) {return null;}
+		this.runBlock = null;
+		this.runData = function(data) {return null;}
+		this.saveContent = function(bid) {return {};}
+		this.showContent = function(block,bcontent) {
+			block.innerHTML = "unknown block";
+			return block;
+		}
+		this.styleBlock = function() {return '';}
+	}
 	
 	/*** Section: Load Extensions ***/
 	
@@ -183,7 +219,7 @@ function Bengine(options,extensions) {
 	
 	// load styles
 	(function() {
-		if(_private.options.loadStyles) {
+		if(_protected.options.loadStyles) {
 			// only load once
 			if(document.getElementById('bengine-global-styles') !== null) {
 				return;
@@ -196,14 +232,14 @@ function Bengine(options,extensions) {
 			.bengine-block-style {
 			}
 			.bengine-instance {
-				overflow: hidden;
+				height: 100%;
 			}
 			.bengine-block-style-embed {
 				height: 85vh !important;
 				margin: 0 !important;
 			}
 			.bengine-x-blocks {
-			
+				height: 100%;
 			}
 			.bengine-single-view {
 				width: 100%;
@@ -281,14 +317,33 @@ function Bengine(options,extensions) {
 				
 				font-size: 0.9em;
 			}
-			@media screen and (max-width: ${_private.options.swidth}) {
-			    .bengine-blockbtns { width: 100%; }
+			.bengine_unknown_block {
+				display: inline-block;
+				width: 100%;
+				height: 32px;
+				border: 1px solid white;
+				padding: 6px 6px;
+				margin: 0px;
+				box-sizing: border-box;
+				text-align: center;
+				font-family: Arial, Helvetica, sans-serif;
+				font-size: 1em;
+				font-weight: bold;
+				color: white;
+				background-color:black;
+				
+			}
+			.bengine-iframe {
+				overflow:hidden;	
+			}
+			@media screen and (max-width: ${_protected.options.swidth}) {
+				.bengine-blockbtns { width: 100%; }
 				.bengine-blockbtn { width: 100%; }
 			}
 			`;
-			
+
 			/* grid system */
-			style.innerHTML += `.col{box-sizing:border-box;position:relative;float:left;min-height:1px}.col-1{width:1%}.col-2{width:2%}.col-3{width:3%}.col-4{width:4%}.col-5{width:5%}.col-6{width:6%}.col-7{width:7%}.col-8{width:8%}.col-9{width:9%}.col-10{width:10%}.col-11{width:11%}.col-12{width:12%}.col-13{width:13%}.col-14{width:14%}.col-15{width:15%}.col-16{width:16%}.col-17{width:17%}.col-18{width:18%}.col-19{width:19%}.col-20{width:20%}.col-21{width:21%}.col-22{width:22%}.col-23{width:23%}.col-24{width:24%}.col-25{width:25%}.col-26{width:26%}.col-27{width:27%}.col-28{width:28%}.col-29{width:29%}.col-30{width:30%}.col-31{width:31%}.col-32{width:32%}.col-33{width:33%}.col-34{width:34%}.col-35{width:35%}.col-36{width:36%}.col-37{width:37%}.col-38{width:38%}.col-39{width:39%}.col-40{width:40%}.col-41{width:41%}.col-42{width:42%}.col-43{width:43%}.col-44{width:44%}.col-45{width:45%}.col-46{width:46%}.col-47{width:47%}.col-48{width:48%}.col-49{width:49%}.col-50{width:50%}.col-51{width:51%}.col-52{width:52%}.col-53{width:53%}.col-54{width:54%}.col-55{width:55%}.col-56{width:56%}.col-57{width:57%}.col-58{width:58%}.col-59{width:59%}.col-60{width:60%}.col-61{width:61%}.col-62{width:62%}.col-63{width:63%}.col-64{width:64%}.col-65{width:65%}.col-66{width:66%}.col-67{width:67%}.col-68{width:68%}.col-69{width:69%}.col-70{width:70%}.col-71{width:71%}.col-72{width:72%}.col-73{width:73%}.col-74{width:74%}.col-75{width:75%}.col-76{width:76%}.col-77{width:77%}.col-78{width:78%}.col-79{width:79%}.col-80{width:80%}.col-81{width:81%}.col-82{width:82%}.col-83{width:83%}.col-84{width:84%}.col-85{width:85%}.col-86{width:86%}.col-87{width:87%}.col-88{width:88%}.col-89{width:89%}.col-90{width:90%}.col-91{width:91%}.col-92{width:92%}.col-93{width:93%}.col-94{width:94%}.col-95{width:95%}.col-96{width:96%}.col-97{width:97%}.col-98{width:98%}.col-99{width:99%}.col-100{width:100%}.col-1_1{width:100%}.col-1_2{width:50%}.col-1_3{width:33.33%}.col-2_3{width:66.66%}.col-1_4{width:25%}.col-1_5{width:20%}.col-1_6{width:16.66%}.col-1_7{width:14.28%}.col-1_8{width:12.5%}.col-1_9{width:11.11%}.col-1_10{width:10%}.col-1_11{width:9.09%}.col-1_12{width:8.33%}`;
+			style.innerHTML += `.col{box-sizing:border-box;position:relative;float:left;min-height:1px;height:100%}.col-1{width:1%}.col-2{width:2%}.col-3{width:3%}.col-4{width:4%}.col-5{width:5%}.col-6{width:6%}.col-7{width:7%}.col-8{width:8%}.col-9{width:9%}.col-10{width:10%}.col-11{width:11%}.col-12{width:12%}.col-13{width:13%}.col-14{width:14%}.col-15{width:15%}.col-16{width:16%}.col-17{width:17%}.col-18{width:18%}.col-19{width:19%}.col-20{width:20%}.col-21{width:21%}.col-22{width:22%}.col-23{width:23%}.col-24{width:24%}.col-25{width:25%}.col-26{width:26%}.col-27{width:27%}.col-28{width:28%}.col-29{width:29%}.col-30{width:30%}.col-31{width:31%}.col-32{width:32%}.col-33{width:33%}.col-34{width:34%}.col-35{width:35%}.col-36{width:36%}.col-37{width:37%}.col-38{width:38%}.col-39{width:39%}.col-40{width:40%}.col-41{width:41%}.col-42{width:42%}.col-43{width:43%}.col-44{width:44%}.col-45{width:45%}.col-46{width:46%}.col-47{width:47%}.col-48{width:48%}.col-49{width:49%}.col-50{width:50%}.col-51{width:51%}.col-52{width:52%}.col-53{width:53%}.col-54{width:54%}.col-55{width:55%}.col-56{width:56%}.col-57{width:57%}.col-58{width:58%}.col-59{width:59%}.col-60{width:60%}.col-61{width:61%}.col-62{width:62%}.col-63{width:63%}.col-64{width:64%}.col-65{width:65%}.col-66{width:66%}.col-67{width:67%}.col-68{width:68%}.col-69{width:69%}.col-70{width:70%}.col-71{width:71%}.col-72{width:72%}.col-73{width:73%}.col-74{width:74%}.col-75{width:75%}.col-76{width:76%}.col-77{width:77%}.col-78{width:78%}.col-79{width:79%}.col-80{width:80%}.col-81{width:81%}.col-82{width:82%}.col-83{width:83%}.col-84{width:84%}.col-85{width:85%}.col-86{width:86%}.col-87{width:87%}.col-88{width:88%}.col-89{width:89%}.col-90{width:90%}.col-91{width:91%}.col-92{width:92%}.col-93{width:93%}.col-94{width:94%}.col-95{width:95%}.col-96{width:96%}.col-97{width:97%}.col-98{width:98%}.col-99{width:99%}.col-100{width:100%}.col-1_1{width:100%}.col-1_2{width:50%}.col-1_3{width:33.33%}.col-2_3{width:66.66%}.col-1_4{width:25%}.col-1_5{width:20%}.col-1_6{width:16.66%}.col-1_7{width:14.28%}.col-1_8{width:12.5%}.col-1_9{width:11.11%}.col-1_10{width:10%}.col-1_11{width:9.09%}.col-1_12{width:8.33%}`;
 			
 			document.getElementsByTagName('head')[0].appendChild(style);
 		}
@@ -358,17 +413,17 @@ function Bengine(options,extensions) {
 			var xmlhttp = new XMLHttpRequest();
 			xmlhttp.open("GET",_private.helper.createURL(path),true);
 			xmlhttp.onreadystatechange = function() {
-		        if (xmlhttp.readyState === XMLHttpRequest.DONE) {
-			        switch(xmlhttp.status) {
-				        case 200:
-				        	resolve({msg:'Success',status:200,data:{file:xmlhttp.responseText}}); break;
-				        case 404:
-				        	reject({msg:'File Not Found',status:404,data:{}}); break;
-				        default:
-				        	reject({msg:'Unknown Error',status:xmlhttp.status,data:{}});
-			        }
-		        }
-		    };
+				if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+					switch(xmlhttp.status) {
+						case 200:
+							resolve({msg:'Success',status:200,data:{file:xmlhttp.responseText}}); break;
+						case 404:
+							reject({msg:'File Not Found',status:404,data:{}}); break;
+						default:
+							reject({msg:'Unknown Error',status:xmlhttp.status,data:{}});
+					}
+				}
+			};
 		
 			xmlhttp.send();
 		})
@@ -383,6 +438,25 @@ function Bengine(options,extensions) {
 	/*** Section: API Block Methods ***/
 	
 	_private.extAPI.alerts = _private.alerts;
+	
+	_private.extAPI.checkConditional = function(data) {
+		var runBool = true;
+		if(data['conditional']) {
+			cparts = data['conditional'].split(".");
+			if(cparts[0] in _protected.variables) {
+				if(cparts[1] in _protected.variables[cparts[0]]) {
+					if(!_protected.variables[cparts[0]][cparts[1]]) {
+						runBool = false;
+					}
+				} else {
+					runBool = false;
+				}
+			} else {
+				runBool = false;
+			}
+		}
+		return runBool;
+	};
 	
 	_private.extAPI.createUUID = function() {
 		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -418,7 +492,7 @@ function Bengine(options,extensions) {
 		let resource;
 		let parts = str.split(/\.(.+)/).filter(function(el) {return el.length != 0});
 		try {
-			resource = _public.variables[parts[0]][parts[1]];
+			resource = _protected.variables[parts[0]][parts[1]];
 		} catch(err) {
 			/* resource does not exist */
 		}
@@ -437,18 +511,18 @@ function Bengine(options,extensions) {
 		var allmatches = [];
 		var matches;
 		do {
-		    matches = re.exec(str);
-		    if (matches) {
-			    let parts = matches[1].split('.');
-			    let replacer;
-			    try {
-				    replacer = _public.variables[parts[0]][parts[1]];
-			    } catch(err) {
-				    replacer = '';
-				    _private.alerts.log('Qengine variable not found: ' + matches[1],'error');
-			    }
-			    nstr = nstr.replace(matches[0],replacer);
-		    }
+			matches = re.exec(str);
+			if (matches) {
+				let parts = matches[1].split('.');
+				let replacer;
+				try {
+					replacer = _protected.variables[parts[0]][parts[1]];
+				} catch(err) {
+					replacer = '';
+					_private.alerts.log('Qengine variable not found: ' + matches[1],'error');
+				}
+				nstr = nstr.replace(matches[0],replacer);
+			}
 		} while (matches);
 		
 		return nstr;
@@ -460,19 +534,19 @@ function Bengine(options,extensions) {
 			xmlhttp.open("POST",_private.helper.createURL(path),true);
 			xmlhttp.setRequestHeader("Content-type","application/json");
 			xmlhttp.onreadystatechange = function() {
-		        if (xmlhttp.readyState === XMLHttpRequest.DONE) {
-			        switch(xmlhttp.status) {
-				        case 500:
-				        	reject({msg:'unknown',status:500,data:{}}); break;
-				        case 0:
-			        		reject({msg:'unknown',status:0,data:{}}); break;
-				        case 200:
-				        	resolve(JSON.parse(xmlhttp.responseText)); break;
-				        default:
-				        	reject(JSON.parse(xmlhttp.responseText));
-			        }
-		        }
-		    };
+				if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+					switch(xmlhttp.status) {
+						case 500:
+							reject({msg:'unknown',status:500,data:{}}); break;
+						case 0:
+							reject({msg:'unknown',status:0,data:{}}); break;
+						case 200:
+							resolve(JSON.parse(xmlhttp.responseText)); break;
+						default:
+							reject(JSON.parse(xmlhttp.responseText));
+					}
+				}
+			};
 		
 			xmlhttp.send(JSON.stringify(data));
 		})
@@ -493,8 +567,11 @@ function Bengine(options,extensions) {
 	
 		if(mainDiv === 'undefined') {
 			return -1;
+		} else {
+			mainDiv.innerHTML = "";
+			mainDiv.style.height = "100%";
 		}
-	
+
 		/* engine div */
 		var enginediv;
 		enginediv = document.createElement('div');
@@ -506,7 +583,8 @@ function Bengine(options,extensions) {
 		var blocksdiv = document.createElement('div');
 		blocksdiv.setAttribute('class','bengine-x-blocks');
 		blocksdiv.setAttribute('id','bengine-x-blocks-' + _private.engineID);
-	
+		blocksdiv.innerHTML = "<p style='color:white'>loading blocks...</p>";
+
 		/* append blocks div to engine div */
 		enginediv.appendChild(blocksdiv);
 	
@@ -532,7 +610,8 @@ function Bengine(options,extensions) {
 		var count = 0;
 		var i = 1;
 		var doubleBlockCount = blockData.length;
-	
+
+		blocksdiv.innerHTML = ''; // remove any loading screen
 		while(count < doubleBlockCount) {
 			/* create the block */
 			var block = _private.blockMethod.generateBlock(i,blockData[count]);
@@ -544,7 +623,7 @@ function Bengine(options,extensions) {
 				throw err;
 			}
 	
-			if(_private.options.enableSingleView) {
+			if(_protected.options.enableSingleView) {
 				retblock.children[0].className += " bengine-block-style-embed";
 			} else {
 				retblock.children[0].className += " bengine-block-style";
@@ -555,10 +634,10 @@ function Bengine(options,extensions) {
 			group.setAttribute('class','bengine-block bengine-block-' + _private.engineID);
 			group.setAttribute('id','bengine-' + _private.engineID + '-' + i);
 	
-			if(_private.options.enableSingleView && i !== 1) {
+			if(_protected.options.enableSingleView && i !== 1) {
 				group.setAttribute('style','display:none;visibility:hidden;');
 			}
-	
+
 			/* append group to blocks div */
 			group.appendChild(retblock);
 			blocksdiv.appendChild(group);
@@ -569,31 +648,31 @@ function Bengine(options,extensions) {
 			count += 2;
 			i++;
 		}
-	
-		function changeBlock(dir) {
-			/* back:false, forward:true */
-			var direction = -1;
-			if(dir) {
-				direction = 1;
+
+		if(_protected.options.enableSingleView) {
+			function changeBlock(dir) {
+				/* back:false, forward:true */
+				var direction = -1;
+				if(dir) {
+					direction = 1;
+				}
+		
+				var viewDiv = document.getElementById('bengine-currentBlock-' + _private.engineID);
+				var viewStatus = Number(viewDiv.getAttribute('data-currentBlock'));
+		
+				var next = viewStatus + direction;
+		
+				var nextBlock = document.getElementById('bengine-' + _private.engineID + '-' + next);
+				if(nextBlock !== null) {
+					var currentBlock = document.getElementById('bengine-' + _private.engineID + '-' + viewStatus);
+					currentBlock.setAttribute('style','display:none;visibility:hidden;');
+		
+					nextBlock.setAttribute('style','display:block;visibility:visible;');
+		
+					viewDiv.setAttribute('data-currentBlock',next);
+				}
 			}
-	
-			var viewDiv = document.getElementById('bengine-currentBlock-' + _private.engineID);
-			var viewStatus = Number(viewDiv.getAttribute('data-currentBlock'));
-	
-			var next = viewStatus + direction;
-	
-			var nextBlock = document.getElementById('bengine-' + _private.engineID + '-' + next);
-			if(nextBlock !== null) {
-				var currentBlock = document.getElementById('bengine-' + _private.engineID + '-' + viewStatus);
-				currentBlock.setAttribute('style','display:none;visibility:hidden;');
-	
-				nextBlock.setAttribute('style','display:block;visibility:visible;');
-	
-				viewDiv.setAttribute('data-currentBlock',next);
-			}
-		}
-	
-		if(_private.options.enableSingleView) {
+			
 			var singleViewBtnsDiv = document.createElement('div');
 			singleViewBtnsDiv.setAttribute('id','bengine-single-view-' + _private.engineID);
 			singleViewBtnsDiv.setAttribute('class','bengine-single-view');
@@ -633,9 +712,9 @@ function Bengine(options,extensions) {
 	_public.loadBlocksShow = function(engineID,pagePath,pageData = null) {
 		/* validate data */
 		try {
-			if(typeof engineID !== 'string') throw Error('Invalid engineID passed to blockEngineStart()');
-			if(typeof pagePath !== 'string') throw Error('Invalid pagePath passed to blockEngineStart()');
-			if(pageData !== null && !Array.isArray(pageData)) throw Error('pageData must be array passed to blockEngineStart()');
+			if(typeof engineID !== 'string') throw Error('Invalid engineID passed to loadBlocksShow()');
+			if(typeof pagePath !== 'string') throw Error('Invalid pagePath passed to loadBlocksShow()');
+			if(pageData !== null && !Array.isArray(pageData)) throw Error('pageData must be array passed to loadBlocksShow()');
 		} catch(err) {
 			_private.alerts.alert(err.message);
 			return -1;
@@ -679,19 +758,25 @@ function Bengine(options,extensions) {
 	this.loadBlocksShow = _public.loadBlocksShow;
 	
 	/*
-		pageData (array)[string,string,...] -  optional, for loading data directly. block type & block content, repeated for every block
-	*/
-	_private.loadBlocksEditReady = async function(pageData) {
-		_private.status = 1;
-		
-		/* initialize display */
-		_private.display = new _private.displayClass(_private.engineID,_private.datahandler);
+		blockData (array)[string,string,...] - block type & block content, repeated for every block
 	
-		/* check that div to place Bengine in exists */
+		(number) - block count
+	*/
+	_private.loadQuizShowReady = async function(pageData) {	
+		
+		/* this hack should be fixed later */
+		var css = document.createElement('style');
+		css.innerHTML = "body, html { height: 100%; }";
+		document.getElementsByTagName('head')[0].appendChild(css);
+		
+		/* domid div */
 		var mainDiv = document.getElementById(_private.engineID);
 	
-		if(mainDiv === null) {
+		if(mainDiv === 'undefined') {
 			return -1;
+		} else {
+			mainDiv.innerHTML = "";
+			mainDiv.style.height = "100%";
 		}
 	
 		/* engine div */
@@ -705,10 +790,283 @@ function Bengine(options,extensions) {
 		var blocksdiv = document.createElement('div');
 		blocksdiv.setAttribute('class','bengine-x-blocks');
 		blocksdiv.setAttribute('id','bengine-x-blocks-' + _private.engineID);
+		blocksdiv.innerHTML = "<p style='color:white'>loading blocks...</p>";
 	
 		/* append blocks div to engine div */
 		enginediv.appendChild(blocksdiv);
+		
+		/* append block dependencies */
+		var waiting = _private.blockMethod.blockScripts();
+		
+		/* a list of dependency objects in 'waiting', we wait until all are loaded before moving on */
+		for(let w = 0; w < waiting.length; w++) {
+			var ctry = 0;
+			var tries = 100;
+			while(typeof window[waiting[w]] == "undefined") {
+				if(ctry > tries) {
+					console.log('Reached wait limit for script: ' + waiting[w]); break;
+				}
+				await _private.helper.sleep(100); // we can't continue until dependencies are loaded
+				ctry++;
+			}
+		}
+		
+		/* store pageData for processing further steps */
+		_private.quizData.data = pageData;
+		
+		/* function for creating quiz iframe */
+		function newIframe() {
+			/* create and set up iframe to store quiz */
+			var iframe = document.createElement('iframe');
+			iframe.setAttribute("class", "col col-100 bengine-iframe");
+			iframe.setAttribute("style", "visibility:hidden;display:none");
+			iframe.setAttribute("frameBorder","0");
+			
+			this.iframe = iframe;
+			
+			this.setUp = function(blocksdiv,submitFunc) {
+				blocksdiv.innerHTML = '';
+				blocksdiv.appendChild(this.iframe);
+				
+				var bstyle = document.createElement('style');
+				bstyle.innerHTML = document.getElementById('bengine-global-styles').innerHTML;
+				this.iframe.contentDocument.head.appendChild(bstyle);
+				
+				var qform = document.createElement('form');
+				qform.addEventListener("submit",submitFunc);
+				this.iframe.contentDocument.body.appendChild(qform);
+			};
+		};
+		
+		function quizSubmitFunc(event) {
+			event.preventDefault();
+			
+			for(var i = 0; i < event.srcElement.elements.length; i++) {
+				var key = event.srcElement.elements[i].name;
+				var value = event.srcElement.elements[i].value;
+				
+				var keys = key.split(".");
+				
+				if(_private.quizData.submitData[keys[0]]) {
+					_private.quizData.submitData[keys[0]][keys[1]] = value;
+				} else {
+					_private.quizData.submitData[keys[0]] = {};
+					_private.quizData.submitData[keys[0]][keys[1]] = value;
+				}
+			}
+			
+			var submit = false;
+			if(_private.quizData.stepConditional) {
+				var keys = _private.quizData.stepConditional.split(".");
+				if(_private.quizData.submitData[keys[0]]) {
+					if(_private.quizData.submitData[keys[0]][keys[1]]) {
+						submit = true;
+					}
+				}
+			} else {
+				submit = true;
+			}
+			
+			if(submit) {				
+				/* grab store variables & submit variabes, then store them */
+				var nVars = {};
+				_private.quizData.store.forEach(function(element) {
+					var parts = element.split(".");
+					if(!nVars[parts[0]]) nVars[parts[0]] = {};
+					nVars[parts[0]][parts[1]] = _protected.variables[parts[0]][parts[1]];
+				});
+				
+				_protected.variables = Object.assign(nVars,_private.quizData.submitData);
+				
+				/* reset stuff here */
+				_private.quizData.submitData = {};
+				_private.quizData.stepConditional = "";
+				_private.quizData.stepCurrent = _private.quizData.stepNext;
+				_private.quizData.stepNext = null;
+				_private.quizData.submitData = {};
+				_private.quizData.store = [];
+				
+				var iframeObj = new newIframe();
+				iframeObj.setUp(blocksdiv,quizSubmitFunc);
+				var iframe = iframeObj.iframe;
+				
+				processQuizBlock(iframe,_private.quizData.data,_private.quizData.stepCurrent,{done:false})
+			}
+			
+			return false;
+		};
+		
+		var iframeObj = new newIframe();
+		iframeObj.setUp(blocksdiv,quizSubmitFunc);
+		var iframe = iframeObj.iframe;
+		
+		/*
+			iframe: the iframe to attach block data to
+			pageData: array of Bengine page data
+			count: keeps count of position of block to process in pageData
+			task: an object with 'done' key, used to view whether runData() is complete
+		*/
+		async function processQuizBlock(iframe,pageData,count,task) {
+			if(count === -1 || count >= pageData.length) {
+				iframe.setAttribute("style", "visibility:visible;display:block");
+				return;	
+			}
+			
+			/* create the block */
+			var blockType = pageData[count];
+			var blockData = pageData[count + 1];
+			
+			var result = _private.extensibles[blockType].runData(blockData,iframe,task);
+			
+			var tries = 0;
+			var maxtries= 100;
+			while(!task.done && tries < maxtries) {
+				await _private.helper.sleep(50);
+				tries++;
+			}
+
+			if(tries === maxtries) {
+				_private.alerts.log(blockType + ' never completed.');
+			}
+			
+			var stepFound = false;
+			switch(blockType) {
+				case "qstep":
+					var cstep = _private.quizData.stepCurrent[0];
+					if(typeof result === "string") {
+						_private.quizData.stepConditional = result;
+					}
+					
+					stepFound = true;
+					break;
+				case "qstore":
+					if(typeof result === "object" && result.constructor.name === "Array") {
+						_private.quizData.store = _private.quizData.store.concat(result);
+					}
+					break;
+				case "qans":
+					if(typeof result === "number") {
+						_private.quizData.grade = result;
+					}
+					break;
+				default:
+					
+			}
+			count += 2;
+			
+			if(count + 2 < pageData.length - 1) {
+				_private.quizData.stepNext = count;
+			} else {
+				_private.quizData.stepNext = -1; // indicates no further steps
+			}
+					
+			if(stepFound) {
+				count = -1;
+			}
+			
+			task.done = false;
+			
+			processQuizBlock(iframe,pageData,count,task);
+		};
+		
+		processQuizBlock(iframe,pageData,0,{done:false});
+	};
 	
+	/*
+		engineID (string) - element id in DOM, Bengine blocks are displayed here
+		pagePath (string) - directory location for file saves and assets
+	*/
+	_public.loadQuizShow = function(engineID,pagePath,pageData = null) {
+		/* validate data */
+		try {
+			if(typeof engineID !== 'string') throw Error('Invalid engineID passed to loadQuizShow()');
+			if(typeof pagePath !== 'string') throw Error('Invalid pagePath passed to loadQuizShow()');
+			if(pageData !== null && !Array.isArray(pageData)) throw Error('pageData must be array passed to loadQuizShow()');
+		} catch(err) {
+			_private.alerts.alert(err.message);
+			return -1;
+		}
+		
+		pagePath = pagePath.replace(/^\/(.+)?\/$/g,"$1");
+		
+		/* initialize parameters */
+		_private.engineID = engineID;
+		_private.pagePath = pagePath;
+		
+		if(pageData === null) {
+			var fpromise = _private.helper.retrieveResource("/content/" + pagePath + "/bengine.json");
+			fpromise.then(function(result) {
+				dataObj = JSON.parse(result.data.file);
+				rpageData = [];
+				for(let i = 0; i < dataObj.types.length; i++) {
+					rpageData.push(dataObj.types[i]);
+					rpageData.push(dataObj.content[i]);
+				}
+				if(document.readyState !== "loading") {
+					_private.loadQuizShowReady(rpageData);
+				} else {
+					window.addEventListener('DOMContentLoaded', function() {
+						_private.loadQuizShowReady(rpageData);
+					});
+				}
+			},function(error) {
+				_private.alerts.alert("Error: " + error.msg + " Status: " + error.status);
+			});
+		} else {
+			if(document.readyState !== "loading") {
+				_private.loadQuizShowReady(pageData);
+			} else {
+				window.addEventListener('DOMContentLoaded', function() {
+					_private.loadQuizShowReady(pageData);
+				});
+			}
+		}
+	};
+	this.loadQuizShow = _public.loadQuizShow;
+	
+	/*
+		pageData (array)[string,string,...] -  optional, for loading data directly. block type & block content, repeated for every block
+	*/
+	_private.loadBlocksEditReady = async function(pageData) {
+		_private.status = 1;
+		
+		/* check that div to place Bengine in exists */
+		var mainDiv = document.getElementById(_private.engineID);
+	
+		if(mainDiv === null) {
+			return -1;
+		} else {
+			mainDiv.innerHTML = "";
+			mainDiv.style.height = "100%";
+		}
+		
+		/* initialize display */
+		_private.display = new _private.displayClass(_private.engineID,_private.datahandler);
+	
+		/* engine div */
+		var enginediv;
+		enginediv = document.createElement('div');
+		enginediv.setAttribute('class','bengine-instance');
+		enginediv.setAttribute('id','bengine-instance-' + _private.engineID);
+		mainDiv.appendChild(enginediv);
+	
+		/* blocks */
+		var blocksdiv = document.createElement('div');
+		blocksdiv.setAttribute('class','bengine-x-blocks');
+		blocksdiv.setAttribute('id','bengine-x-blocks-' + _private.engineID);
+		blocksdiv.innerHTML = "<p style='color:white'>loading blocks...</p>";
+	
+		/* append blocks div to engine div */
+		enginediv.appendChild(blocksdiv);
+		
+		/* check that blocks are loaded, otherwise set to default 'not exists' type block */
+		for(var i = 0; i < pageData.length; i += 2) {
+			if(typeof _private.extensibles[pageData[i]] === "undefined") {
+				_private.categoryCounts.unknown += 1;
+				_private.extensibles[pageData[i]] = new _private.blockMethod.unknownBlock(pageData[i]);
+			}
+		}
+
 		/* append block styles */
 		_private.blockMethod.blockStyle();
 		
@@ -726,6 +1084,8 @@ function Bengine(options,extensions) {
 				ctry++;
 			}
 		}
+		
+		blocksdiv.innerHTML = '';
 
 		/* initial first block buttons, get count for style requirement below */
 		var buttons = _private.blockMethod.blockButtons(0);
@@ -742,10 +1102,17 @@ function Bengine(options,extensions) {
 		} else {
 			buttons.childNodes[0].lastChild.children[0].style.visibility = 'visible';
 		}
+		
+		var cspot = 0;
+		Object.keys(_private.categoryCounts).forEach(function(element) {
+			if(_private.categoryCounts[element] !== 0) {
+				cspot += 1;
+			}
+		});
 	
 		while(count < doubleBlockCount) {
 			/* create the block */
-			var block = _private.blockMethod.generateBlock(i,pageData[count]);		
+			var block = _private.blockMethod.generateBlock(i,pageData[count]);
 			var retblock = _private.extensibles[pageData[count]].insertContent(block,pageData[count + 1]);
 			retblock = _private.blockMethod.addRunBtn(i,_private.extensibles[pageData[count]],retblock);
 	
@@ -755,9 +1122,9 @@ function Bengine(options,extensions) {
 			/* hide the last delete button */
 			if(count === doubleBlockCount - 2) {
 				/* last button is delete, so hide last delete button */
-				buttons.childNodes[0].children[2].children[0].style.visibility = 'hidden';
+				buttons.childNodes[0].children[cspot].children[0].style.visibility = 'hidden';
 			} else {
-				buttons.childNodes[0].children[2].children[0].style.visibility = 'visible';
+				buttons.childNodes[0].children[cspot].children[0].style.visibility = 'visible';
 			}
 	
 			/* create block + button div */
@@ -885,6 +1252,7 @@ function Bengine(options,extensions) {
 	
 					/* attach the blocks dependencies */
 					var scripts = document.createElement('script');
+					scripts.async = false;
 					scripts.src = element.source;
 					scripts.type = element.type;
 					if(element.integrity) {
@@ -895,7 +1263,7 @@ function Bengine(options,extensions) {
 		
 					/* fetch next script */
 					if(scriptArray.length > (position + 1)) {
-						fetchScript(existing,scriptArray,position+1,element.wait,0);
+						fetchScript(existing,scriptArray,position+1,'',0); // element.wait 
 					}
 				}
 			}
@@ -911,13 +1279,12 @@ function Bengine(options,extensions) {
 					
 					// check if scriptArray[index] ? object exists, if it does, no need to fetch
 					
-					
 					fetchScript([],scriptArray,0,'',0);
 					scriptArray.forEach(function(element) {
 						if(element.wait) {
 							waiting.push(element.wait);
 						}
-					})
+					});
 				}
 			}
 		})(prop);
@@ -957,7 +1324,7 @@ function Bengine(options,extensions) {
 	// create a blank block
 	_private.blockMethod.generateBlock = function(bid,btype) {
 		var block = document.createElement('div');
-		if(!_private.options.enableSingleView && btype !== 'title') {
+		if(!_protected.options.enableSingleView && btype !== 'title') {
 			block.setAttribute('style','margin-bottom:26px;');
 		}
 		block.setAttribute('data-btype',btype);
@@ -994,7 +1361,11 @@ function Bengine(options,extensions) {
 			sum++;
 			categoryArray.push("quiz");
 		}
-		
+		if(_private.categoryCounts.unknown > 0) {
+			sum++;
+			categoryArray.push("unknown");
+		}
+
 		let width;
 		switch(sum) {
 			case 2:
@@ -1003,6 +1374,8 @@ function Bengine(options,extensions) {
 				width = '1_3'; break;
 			case 4:
 				width = '25'; break;
+			case 5:
+				width = '20'; break;
 			default:
 				width = '100';
 		}
@@ -1198,7 +1571,7 @@ function Bengine(options,extensions) {
 	};
 	
 	_private.blockMethod.addBlock = function(bid,blockTypeName) {
-		if(_private.options.blockLimit < (document.getElementsByClassName("bengine-block-" + _private.engineID).length + 1)) {
+		if(_protected.options.blockLimit < (document.getElementsByClassName("bengine-block-" + _private.engineID).length + 1)) {
 			_private.alerts.alert("You Have Reached The Block Limit");
 			return;
 		}
@@ -1215,7 +1588,7 @@ function Bengine(options,extensions) {
 			
 			/* save blocks to temp table, indicated by false */
 			_private.display.updateSaveStatus("Not Saved");
-			if(_private.options.enableAutoSave) {
+			if(_protected.options.enableAutoSave) {
 				saveBlocks(false);
 			}
 		}
@@ -1277,14 +1650,14 @@ function Bengine(options,extensions) {
 	
 		/* save blocks to temp table, indicated by false */
 		_private.display.updateSaveStatus("Not Saved");
-		if(_private.options.enableAutoSave) {
+		if(_protected.options.enableAutoSave) {
 			saveBlocks(false);
 		}
 	};
 	
 	/*** Section: Ajax Functions For Handling Data On The Back-End ***/
 	
-	if(_private.options.mode === 'bengine') {
+	if(_protected.options.mode === 'bengine') {
 		// used for creating a Bengine File of the blocks
 		_private.datahandler.createFile = function() {
 			var blockCount = _private.blockMethod.countBlocks();
@@ -1329,7 +1702,7 @@ function Bengine(options,extensions) {
 			qd.document.write('</body></html>');
 			qd.document.close();
 		};
-	} else if(_private.options.mode === 'qengine') {
+	} else if(_protected.options.mode === 'qengine') {
 		// used for creating a Qengine File of the blocks
 		_private.datahandler.createFile = function() {
 			var blockCount = _private.blockMethod.countBlocks();
@@ -1416,15 +1789,15 @@ function Bengine(options,extensions) {
 		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 	
 		xmlhttp.onreadystatechange = function() {
-	        if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+			if (xmlhttp.readyState === XMLHttpRequest.DONE) {
 				switch(xmlhttp.status) {
-			        case 500:
-			        	_private.alerts.alert("Unknown Error. Status: 500"); break;
-			        case 0:
-			        	_private.alerts.alert("Unknown Error. Status: 0"); break;
-			        case 200:
-			        	var result = JSON.parse(xmlhttp.responseText);
-			        	var oldBengine = document.getElementById('bengine-instance-' + _private.engineID);
+					case 500:
+						_private.alerts.alert("Unknown Error. Status: 500"); break;
+					case 0:
+						_private.alerts.alert("Unknown Error. Status: 0"); break;
+					case 200:
+						var result = JSON.parse(xmlhttp.responseText);
+						var oldBengine = document.getElementById('bengine-instance-' + _private.engineID);
 						var main = oldBengine.parentNode;
 						main.removeChild(oldBengine);
 						if(result.data === "") {
@@ -1434,12 +1807,12 @@ function Bengine(options,extensions) {
 						}
 						_private.display.updateSaveStatus("Saved");
 						break;
-			        default:
-			        	var result = JSON.parse(xmlhttp.responseText);
-			        	_private.alerts.alert("Error. Status: " + xmlhttp.status + " Message: " + result.msg);
-		        }
-	        }
-	    };
+					default:
+						var result = JSON.parse(xmlhttp.responseText);
+						_private.alerts.alert("Error. Status: " + xmlhttp.status + " Message: " + result.msg);
+				}
+			}
+		};
 	
 		xmlhttp.send(params);
 	};
@@ -1513,28 +1886,28 @@ function Bengine(options,extensions) {
 		xmlhttp.setRequestHeader("Content-type","application/json");
 	
 		xmlhttp.onreadystatechange = function() {
-	        if (xmlhttp.readyState === XMLHttpRequest.DONE) {
-		        switch(xmlhttp.status) {
-			        case 500:
-			        	_private.alerts.alert("Unknown Error. Status: 500"); break;
-			        case 0:
-			        	_private.alerts.alert("Unknown Error. Status: 0"); break;
-			        case 200:
-			        	if(table === 1) {
+			if (xmlhttp.readyState === XMLHttpRequest.DONE) {
+				switch(xmlhttp.status) {
+					case 500:
+						_private.alerts.alert("Unknown Error. Status: 500"); break;
+					case 0:
+						_private.alerts.alert("Unknown Error. Status: 0"); break;
+					case 200:
+						if(table === 1) {
 							_private.display.updateSaveStatus("Saved");
 						}
 						break;
-			        default:
-			        	var result = JSON.parse(xmlhttp.responseText);
-			        	_private.alerts.alert("Error. Status: " + xmlhttp.status + " Message: " + result.msg);
-		        }
-	        }
-	    };
+					default:
+						var result = JSON.parse(xmlhttp.responseText);
+						_private.alerts.alert("Error. Status: " + xmlhttp.status + " Message: " + result.msg);
+				}
+			}
+		};
 		
 		xmlhttp.send(JSON.stringify(contentToSave));
 	};
 	
-	_private.uploadProcess = function(bid,blockObj,file) {
+	_private.datahandler.uploadProcess = function(bid,blockObj,file) {
 		/* create the block to host the media */
 		_private.blockMethod.createBlock(bid - 1,blockObj);
 
@@ -1588,25 +1961,25 @@ function Bengine(options,extensions) {
 			xmlhttp.onreadystatechange = function() {
 				if (xmlhttp.readyState === XMLHttpRequest.DONE) {
 					switch(xmlhttp.status) {
-				        case 500:
-				        	_private.blockMethod.deleteBlock(bid - 1);
-				        	reject({msg:"unknown",status:500,data:{}});
-				        	break;
-				        case 0:
-				        	_private.blockMethod.deleteBlock(bid - 1);
-				        	reject({msg:"unknown",status:0,data:{}});
-				        	break;
-				        case 200:
-				        	var spots = _private.helper.position(xmlhttp.responseText.length);
+						case 500:
+							_private.blockMethod.deleteBlock(bid - 1);
+							reject({msg:"unknown",status:500,data:{}});
+							break;
+						case 0:
+							_private.blockMethod.deleteBlock(bid - 1);
+							reject({msg:"unknown",status:0,data:{}});
+							break;
+						case 200:
+							var spots = _private.helper.position(xmlhttp.responseText.length);
 							var val = xmlhttp.responseText.slice(spots[0],spots[1]).split(",");
 							
 							resolve({msg:'Success',status:200,data:{spot:val[val.length - 1]}});
 							break;
-				        default:
-				        	_private.blockMethod.deleteBlock(bid - 1);
-				        	var result = JSON.parse(xmlhttp.responseText);
-				        	reject({msg:result.msg,status:xmlhttp.status,data:{}});
-			        }
+						default:
+							_private.blockMethod.deleteBlock(bid - 1);
+							var result = JSON.parse(xmlhttp.responseText);
+							reject({msg:result.msg,status:xmlhttp.status,data:{}});
+					}
 				}
 			};
 
@@ -1618,7 +1991,7 @@ function Bengine(options,extensions) {
 
 			/* save blocks to temp table, indicated by false */
 			_private.display.updateSaveStatus("Not Saved");
-			if(_private.options.enableAutoSave) {
+			if(_protected.options.enableAutoSave) {
 				saveBlocks(false);
 			}
 		},function(error) {
@@ -1648,8 +2021,8 @@ function Bengine(options,extensions) {
 	
 			/* validation */
 			if(fileSelect.files.length > 0) {
-				if(file.size > (_private.options.mediaLimit * 1048576)) {
-					_private.alerts.alert(`Files Must Be Less Than ${_private.options.mediaLimit} MB`);
+				if(file.size > (_protected.options.mediaLimit * 1048576)) {
+					_private.alerts.alert(`Files Must Be Less Than ${_protected.options.mediaLimit} MB`);
 					return;
 				}
 			} else {
@@ -1678,29 +2051,123 @@ function Bengine(options,extensions) {
 
 			if(checklengthvideo) {
 				vidTempElement.ondurationchange = function() {
-					if(this.duration > _private.options.playableMediaLimit) {
-						_private.alerts.alert(`Videos Must Be Less Than ${_private.options.playableMediaLimit} Seconds`);
+					if(this.duration > _protected.options.playableMediaLimit) {
+						_private.alerts.alert(`Videos Must Be Less Than ${_protected.options.playableMediaLimit} Seconds`);
 					} else {
-						_private.uploadProcess(bid,blockObj,file);
+						_private.datahandler.uploadProcess(bid,blockObj,file);
 					}
 				};
 			} else if(checklengthaudio) {
 				audTempElement.ondurationchange = function() {
-					if(this.duration > _private.options.playableMediaLimit) {
-						_private.alerts.alert(`Videos Must Be Less Than ${_private.options.playableMediaLimit} Seconds`);
+					if(this.duration > _protected.options.playableMediaLimit) {
+						_private.alerts.alert(`Videos Must Be Less Than ${_protected.options.playableMediaLimit} Seconds`);
 					} else {
-						_private.uploadProcess(bid,blockObj,file);
+						_private.datahandler.uploadProcess(bid,blockObj,file);
 					}
 				};
 			} else {
-				_private.uploadProcess(bid,blockObj,file);
+				_private.datahandler.uploadProcess(bid,blockObj,file);
 			}
 			
 			/* resets selection to nothing, in case user decides to upload the same file, onchange will still fire */
 			this.value = null;
 		};
 	};
-}
+};
+
+Bengine.loadBlocks = function(blocks,options) {
+	// validate
+	if(typeof blocks === "undefined") {
+		return -1;
+	}
+	if(typeof options !== "object") {
+		options = {};
+	}
+	
+	var notLoadedBlocks = blocks;
+	
+	// pick up on 404 script load errors
+	var failedBlockLoads = [];
+	function failedBlockFunc(e) {
+		if(e.target.tagName === "SCRIPT") {
+			var blockName = e.target.src.split("/").pop().split(".")[0];
+			if(typeof blockName !== "undefined") {
+				console.log("failed to load: " + blockName);
+				failedBlockLoads.push(blockName);
+				var index = notLoadedBlocks.indexOf(blockName);
+				if (index !== -1) notLoadedBlocks.splice(index, 1);
+			}
+		}
+		if(e.target.tagName === "LINK") {
+			var blockName = e.target.href.split("/").pop().split(".")[0];
+			if(typeof blockName !== "undefined") {
+				console.log("failed to link: " + blockName);
+				failedBlockLoads.push(blockName);
+				var index = notLoadedBlocks.indexOf(blockName);
+				if (index !== -1) notLoadedBlocks.splice(index, 1);
+			}
+		}
+	};
+	
+	window.addEventListener('error',failedBlockFunc,true);
+	
+	// append block script to load javascript
+	blocks.forEach(function(block) {
+		if(block.indexOf(".css") > -1) {
+			var stylesheet = document.createElement('link');
+			stylesheet.onload = function(e) {
+				var index = notLoadedBlocks.indexOf(block);
+				if (index !== -1) notLoadedBlocks.splice(index, 1);
+			};
+			stylesheet.rel = "stylesheet";
+			stylesheet.defer = true;
+			stylesheet.href = block;
+			document.getElementsByTagName('head')[0].appendChild(stylesheet);
+		} else {
+			var scripts = document.createElement('script');
+			scripts.onload = function(e) {
+				var index = notLoadedBlocks.indexOf(block);
+				if (index !== -1) notLoadedBlocks.splice(index, 1);
+			};
+			scripts.async = false;
+			if(block.indexOf("http") > -1 && block.indexOf("//") > -1) {
+				if(block.indexOf("RELATIVE") > -1) {
+					var url = block.split("/").slice(3).join("/");
+					scripts.src = url;
+				} else {
+					scripts.src = block;
+				}
+			} else {
+				if(options.optimize) {
+					scripts.src = 'blocks_minified/' + block + ".min.js";
+				} else {
+					scripts.src = 'blocks/' + block + ".js";
+				}
+			}
+			scripts.type = 'text/javascript';
+			document.getElementsByTagName('head')[0].appendChild(scripts);
+		}
+	});
+	
+	function sleep(ms) {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	};
+	
+	async function waitForAllBlocks(resolve,reject) {		
+		var tries = 0;
+		var limit = 100;
+		while(notLoadedBlocks.length > 0 && tries < limit) {
+			await sleep(50);
+			tries++;
+		}
+		
+		window.removeEventListener('error',failedBlockFunc);
+		
+		resolve(failedBlockLoads);
+	};
+	
+	return new Promise(waitForAllBlocks);
+};
 
 Bengine.extensibles = {};
 
@@ -1710,3 +2177,4 @@ function Qengine(options,extensions) {
 	coptions.mode = 'qengine';
 	return new Bengine(coptions,extensions);
 }
+

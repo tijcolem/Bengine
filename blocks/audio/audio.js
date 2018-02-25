@@ -44,6 +44,7 @@ Bengine.extensibles.audio = new function Audio() {
 	};
 	
 	this.runBlock = null;
+	this.runData = null;
 
 	this.saveContent = function(bid) {
 		/* replace() is for escaping backslashes and making relative path */

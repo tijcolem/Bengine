@@ -8,23 +8,16 @@ Bengine.extensibles.sage = new function Sage() {
 	var thisBlock = this;
 	var _private = {};
 	
-	_private.runCode = function(bid) {
-		var data = {};
-		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
-		data['namespace'] = document.getElementById(bid).children[1].value;
-		data['conditional'] = document.getElementById(bid).children[2].value;
-		data['vars'] = document.getElementById(bid).children[3].value;
-		data['type'] = thisBlock.type;
-		data['fpath'] = thisBlock.d.getPagePath();
-		
+	_private.runCode = function(data,task) {		
 		var promise = thisBlock.p.sendData('/code',data);
 		
 		promise.then(function(result) {
 			thisBlock.d.variables[data['namespace']] = result['data'][data['namespace']]['variables'];
 			thisBlock.p.alerts.log('complete','success');
-			console.log(thisBlock.d.variables);
+			if(task) task.done = true;
 		},function(error) {
 			thisBlock.p.alerts.alert(error.msg);
+			if(task) task.done = true;
 		});
 	};
 	
@@ -105,7 +98,27 @@ Bengine.extensibles.sage = new function Sage() {
 	};
 	
 	this.runBlock = function(bid) {
-		_private.runCode(bid);
+		var data = {};
+		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
+		data['namespace'] = document.getElementById(bid).children[1].value;
+		data['conditional'] = document.getElementById(bid).children[2].value;
+		data['vars'] = document.getElementById(bid).children[3].value;
+		data['type'] = thisBlock.type;
+		data['fpath'] = thisBlock.d.getPagePath();
+		
+		_private.runCode(data,null);
+	};
+	
+	this.runData = function(data,iframe,task) {
+		var rdata = {};
+		rdata['code'] = data['content'];
+		rdata['namespace'] = data['namespace'];
+		rdata['conditional'] = data['conditional'];
+		rdata['vars'] = data['vars'];
+		rdata['type'] = thisBlock.type;
+		rdata['fpath'] = thisBlock.d.getPagePath();	
+		
+		_private.runCode(rdata,task);
 	};
 
 	this.saveContent = function(bid) {

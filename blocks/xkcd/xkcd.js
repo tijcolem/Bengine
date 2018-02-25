@@ -73,6 +73,7 @@ Bengine.extensibles.xkcdi = new function Xkcdi() {
 	};
 	
 	this.runBlock = null;
+	this.runData = null;
 
 	this.saveContent = function(bid) {
 		/* get the relative path */

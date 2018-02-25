@@ -103,6 +103,11 @@ Bengine.extensibles.latex = new function Latex() {
 	this.runBlock = function(bid) {
 		_private.renderLatex(document.getElementById(bid).childNodes[1]);
 	}
+	
+	this.runData = function(data,iframe) {
+		//// needs implementing
+		return null;
+	};
 
 	this.saveContent = function(bid) {
 		return {'content':document.getElementById(bid).children[1].innerHTML};

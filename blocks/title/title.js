@@ -45,9 +45,8 @@ Bengine.extensibles.title = new function Title() {
 		/* nothing to do */
 	};
 	
-	this.runBlock = function(bid) {
-		/* nothing to do */
-	}
+	this.runBlock = null;
+	this.runData = null;
 
 	this.saveContent = function(bid) {
 		return {'content':document.getElementById(bid).children[0].value};
