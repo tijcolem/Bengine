@@ -1,5 +1,5 @@
-Bengine.extensibles.pdfslide = new function Slide() {
-	this.type = "pdfslide";
+Bengine.extensibles.slide = new function Slide() {
+	this.type = "slide";
 	this.name = "slide";
 	this.category = "media";
 	this.upload = true;
@@ -126,6 +126,7 @@ Bengine.extensibles.pdfslide = new function Slide() {
 	};
 	
 	this.runBlock = null;
+	this.runData = null;
 
 	this.saveContent = function(bid) {
 		/* replace() is for escaping backslashes and making relative path */

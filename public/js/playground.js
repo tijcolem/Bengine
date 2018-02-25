@@ -98,6 +98,19 @@ this.runBlock = function(bid) {
 };
 
 /**************************************
+runData(data,iframe,task)
+this function's purpose is the essentially the same as runBlock but without requiring a user click
+
+data - the block's saved data
+iframe - an iframe to use
+task - contains property 'done' = false, which should be set to true upon function completion
+***************************************/
+
+this.runData = function(data,iframe,task) {
+	// not required for this block
+};
+
+/**************************************
 saveContent(bid)
 grab only the necessary values to save to the database and return them
 
@@ -224,5 +237,4 @@ function loadCustomBlock() {
 
     var playEngine = new Bengine(options,extensions);
     playEngine.loadBlocksEdit('content','bank/pid-playground/1.0');
-    console.log(playEngine);
 }

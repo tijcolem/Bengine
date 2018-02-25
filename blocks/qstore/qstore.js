@@ -29,9 +29,9 @@ Bengine.extensibles.qstore = new function Qstore() {
 		blockCond.setAttribute("type","text");
 		blockCond.setAttribute("class","bengine-x-ns-cond col col-50");
 		blockCond.setAttribute("placeholder","Block Conditional (optional)");
-		
+
 		if(!thisBlock.p.emptyObject(bcontent)) {
-			storeVars.setAttribute("value",bcontent['content']);
+			storeVars.value = bcontent['content'];
 			blockNS.value = bcontent['namespace'];
 			blockCond.value = bcontent['conditional'];
 		}
@@ -50,6 +50,15 @@ Bengine.extensibles.qstore = new function Qstore() {
 	};
 	
 	this.runBlock = null;
+	
+	this.runData = function(data,iframe,task) {
+		var result = null;
+		if(thisBlock.p.checkConditional(data)) {
+			result = data.content.split(/\n|,/);
+		}
+		task.done = true;
+		return result;
+	};
 
 	this.saveContent = function(bid) {
 		let namespace = document.getElementById(bid).children[0].value.trim();

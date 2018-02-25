@@ -170,6 +170,7 @@ logger._print('sorted array = [' + D.join(', ') + ']');
 	};
 	
 	this.runBlock = null;
+	this.runData = null;
 
 	this.saveContent = function(bid) {
 		var content = _private.AlgoVisualizer.state.editor.codeEditor.getValue();

@@ -8,23 +8,20 @@ Bengine.extensibles.qcss = new function Qcss() {
 	var thisBlock = this;
 	var _private = {};
 	
-	_private.renderCSS = function(block,sid) {
+	_private.renderCSS = function(cssText,sid,doc) {
+		var cdoc = doc || document;
+		
 		/* get or make style block */
-		let styleblock;
-		try {
-			styleblock = document.getElementById('qengine-styles-' + sid);
-		} catch(err) {
-			// ignore, just an id doesn't exist err
-		} finally {
-			if(!styleblock) {
-				styleblock = document.createElement('style');
-				styleblock.setAttribute("id", 'qengine-styles-' + sid);
-				document.getElementsByTagName('head')[0].appendChild(styleblock);
-			}
+		var styleblock = cdoc.getElementById('qengine-styles-' + sid);
+
+		if(!styleblock) {
+			styleblock = document.createElement('style');
+			styleblock.setAttribute("id", 'qengine-styles-' + sid);
+			cdoc.getElementsByTagName('head')[0].appendChild(styleblock);
 		}
 		
 		/* render css */
-		styleblock.innerHTML = block.innerText;
+		styleblock.innerHTML = cssText.replace(/\s\s/g,"");
 	};
 	
 	this.destroy = function(block) {
@@ -72,20 +69,33 @@ Bengine.extensibles.qcss = new function Qcss() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		let sid = document.getElementById(bid).childNodes[2].getAttribute('data-sid');
-		_private.renderCSS(document.getElementById(bid).childNodes[0],sid);
+		return null;
 	};
 	
 	this.runBlock = function(bid) {
 		var qcssBlock = document.getElementById(bid).childNodes[2];
-		let sid = qcssBlock.getAttribute('data-sid');
-		_private.renderCSS(qcssBlock,sid);
+		var sid = qcssBlock.getAttribute('data-sid');
+		_private.renderCSS(qcssBlock.innerText,sid,null);
 	}
+	
+	this.runData = function(data,iframe,task) {
+		if(thisBlock.p.checkConditional(data)) {
+			var sid = thisBlock.p.createUUID();
+			var style = document.createElement('style');
+			style.setAttribute('id','qengine-styles-' + sid);
+			
+			var idoc = iframe.contentDocument;
+			idoc.head.appendChild(style);
+			
+			_private.renderCSS(data.content,sid,idoc);
+		}
+		task.done = true;
+	};
 
 	this.saveContent = function(bid) {
 		let namespace = document.getElementById(bid).children[0].value.trim();
 		let conditional = document.getElementById(bid).children[1].value.trim();
-		let content = document.getElementById(bid).children[2].innerHTML;
+		let content = document.getElementById(bid).children[2].innerText;
 		return {'content':content,'namespace':namespace,'conditional':conditional};
 	};
 
@@ -97,7 +107,7 @@ Bengine.extensibles.qcss = new function Qcss() {
 		
 		block.appendChild(qcssBlock);
 
-		_private.renderCSS(qcssBlock,thisBlock.p.createUUID());
+		_private.renderCSS(qcssBlock.innerText,thisBlock.p.createUUID(),null);
 
 		return block;
 	};

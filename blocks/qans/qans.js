@@ -41,6 +41,15 @@ Bengine.extensibles.qans = new function Qans() {
 	};
 	
 	this.runBlock = null;
+	
+	this.runData = function(data,iframe,task) {
+		var result = null;
+		if(thisBlock.p.checkConditional(data)) {
+			result = Number(thisBlock.p.replaceVars(data.content.trim()));
+		}
+		task.done = true;
+		return result;
+	};
 
 	this.saveContent = function(bid) {
 		var namespace = document.getElementById(bid).children[0].value.trim();

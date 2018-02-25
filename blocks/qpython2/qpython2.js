@@ -8,23 +8,17 @@ Bengine.extensibles.python2 = new function Python2() {
 	var thisBlock = this;
 	var _private = {};
 	
-	_private.runCode = (bid) => {
-		var data = {};
-		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
-		data['namespace'] = document.getElementById(bid).children[1].value.trim();
-		data['conditional'] = document.getElementById(bid).children[2].value.trim();
-		data['vars'] = document.getElementById(bid).children[3].value;
-		data['type'] = thisBlock.type;
-		data['fpath'] = thisBlock.d.getPagePath();		
+	_private.runCode = function(data,task) {
+		data.code = thisBlock.p.replaceVars(data.code);
 		var promise = thisBlock.p.sendData('/code',data);
 		
 		promise.then(function(result) {
 			thisBlock.d.variables[data['namespace']] = result['data'][data['namespace']]['variables'];
 			thisBlock.p.alerts.log('complete','success');
-			console.log(thisBlock.d.variables);
+			if(task) task.done = true;
 		},function(result) {
-			console.log('This code run caused an error: ' + data['code']);
 			thisBlock.p.alerts.log("Error. Status: " + result.status + " Message: " + result.msg,"error");
+			if(task) task.done = true;
 		});
 	};
 	
@@ -105,7 +99,27 @@ Bengine.extensibles.python2 = new function Python2() {
 	};
 	
 	this.runBlock = function(bid) {
-		_private.runCode(bid);
+		var data = {};
+		data['code'] = thisBlock.p.replaceVars(document.getElementById(bid).children[0].children[0].CodeMirror.getValue());
+		data['namespace'] = document.getElementById(bid).children[1].value.trim();
+		data['conditional'] = document.getElementById(bid).children[2].value.trim();
+		data['vars'] = document.getElementById(bid).children[3].value;
+		data['type'] = thisBlock.type;
+		data['fpath'] = thisBlock.d.getPagePath();
+		
+		_private.runCode(data,null);
+	}
+	
+	this.runData = function(data,iframe,task) {
+		var rdata = {};
+		rdata['code'] = data['content'];
+		rdata['namespace'] = data['namespace'];
+		rdata['conditional'] = data['conditional'];
+		rdata['vars'] = data['vars'];
+		rdata['type'] = thisBlock.type;
+		rdata['fpath'] = thisBlock.d.getPagePath();	
+		
+		_private.runCode(rdata,task);
 	}
 
 	this.saveContent = function(bid) {

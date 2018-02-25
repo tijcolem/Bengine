@@ -37,6 +37,7 @@ Bengine.extensibles.image = new function Image() {
 	};
 	
 	this.runBlock = null;
+	this.runData = null;
 
 	this.saveContent = function(bid) {
 		/* replace() is for escaping backslashes and making relative path */

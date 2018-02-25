@@ -1,1 +1,0 @@
-../../blocks/pdfslide/pdfslide.js

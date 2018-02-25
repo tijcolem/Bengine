@@ -81,16 +81,17 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 		}
 	};
 	
-	_private.renderHTML = function(block) {
-		let replaced = thisBlock.p.replaceVars(block.value);
+	_private.renderHTML = function(bvalue,preview) {
+		let replaced = thisBlock.p.replaceVars(bvalue);
 		let subbed = _private.replaceShortcodes(replaced);
 		
 		/* get the html input */
 		var str = '<div class="xQhtml-parent">' + subbed + '</div>';
 
 		/* put the html into the preview block, renders automatically */
-		var previewBlock = block.parentNode.childNodes[0];
-		previewBlock.innerHTML = str;
+		preview.innerHTML = str;
+		
+		return preview;
 	};
 	
 	_private.replaceShortcodes = function(str) {
@@ -192,18 +193,27 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		_private.renderHTML(document.getElementById(bid).childNodes[3]);
+		var block = document.getElementById(bid).childNodes[3];
+		_private.renderHTML(block.value,block.parentNode.childNodes[0]);
 	};
 	
 	this.runBlock = function(bid) {
-		_private.renderHTML(document.getElementById(bid).childNodes[3]);
+		var block = document.getElementById(bid).childNodes[3];
+		_private.renderHTML(block.value,block.parentNode.childNodes[0]);
 	}
+	
+	this.runData = function(data,iframe,task) {
+		if(thisBlock.p.checkConditional(data)) {
+			iframe.contentDocument.body.children[0].appendChild(_private.renderHTML(data.content,document.createElement('div')));
+		}
+		task.done = true;
+	};
 
 	this.saveContent = function(bid) {
-		let namespace = document.getElementById(bid).children[1].value;
-		let conditional = document.getElementById(bid).children[2].value;
-		let html = document.getElementById(bid).children[3].value;
-		return {'content':html,'namespace':namespace,'conditional':conditional}; // ? thisBlock.p.decodeHTML(html)
+		var namespace = document.getElementById(bid).children[1].value;
+		var conditional = document.getElementById(bid).children[2].value;
+		var html = document.getElementById(bid).children[3].value;
+		return {'content':html,'namespace':namespace,'conditional':conditional};
 	};
 
 	this.showContent = function(block,bcontent) {
@@ -218,7 +228,8 @@ Bengine.extensibles.qhtml = new function Qhtml() {
 		block.appendChild(qhtmlpreview);
 		block.appendChild(qhtmlBlock);
 
-		_private.renderHTML(qhtmlBlock);
+		var qhtmlBlock = document.getElementById(bid).childNodes[3];
+		_private.renderHTML(qhtmlBlock.value,qhtmlBlock.parentNode.childNodes[0]);
 
 		return block;
 	};

@@ -44,6 +44,7 @@ Bengine.extensibles.video = new function Video() {
 	};
 	
 	this.runBlock = null;
+	this.runData = null;
 
 	this.saveContent = function(bid) {
 		var mediastr = document.getElementById(bid).children[0].children[0].src;

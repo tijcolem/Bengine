@@ -8,7 +8,7 @@ Bengine.extensibles.files = new function Files() {
 	var thisBlock = this;
 	_private = {};
 	
-	_private.getFiles = function(namespace,files) {			
+	_private.getFiles = function(namespace,files,task) {			
 		let filesStr = files.replace(/ /g,'').replace(/\n$/,'');
 		let filesArray = [];
 		if(filesStr.length > 0) {
@@ -20,15 +20,17 @@ Bengine.extensibles.files = new function Files() {
 			files:filesArray,
 			namespace:namespace
 		}
-		
+
 		thisBlock.p.sendData('/files',dataObj).then(function(result) {
 			let cnt = Object.keys(result.data.files).length;
 			if(cnt > 0) {
 				thisBlock.d.variables[namespace] = result.data.files;
 				thisBlock.p.alerts.log('complete','success');
 			}
+			if(task) task.done = true;
 		},function(error) {
 			thisBlock.p.alerts.alert(error.msg);
+			if(task) task.done = true;
 		});
 	};
 	
@@ -69,16 +71,24 @@ Bengine.extensibles.files = new function Files() {
 	};
 
 	this.afterDOMinsert = function(bid,data) {
-		_private.getFiles(document.getElementById(bid).childNodes[0].value,document.getElementById(bid).childNodes[2].value);
+		_private.getFiles(document.getElementById(bid).childNodes[0].value,document.getElementById(bid).childNodes[2].value,null);
 	};
 	
 	this.runBlock = function(bid) {
-		_private.getFiles(document.getElementById(bid).childNodes[0].value,document.getElementById(bid).childNodes[2].value);
-	}
+		_private.getFiles(document.getElementById(bid).childNodes[0].value,document.getElementById(bid).childNodes[2].value,null);
+	};
+	
+	this.runData = function(data,iframe,task) {
+		if(thisBlock.p.checkConditional(data)) {
+			_private.getFiles(data['namespace'],data['content'],task);
+		} else {
+			task.done = true;
+		}
+	};
 
 	this.saveContent = function(bid) {
 		var namespace = document.getElementById(bid).children[0].value.trim();
-		var conditional = document.getElementById(bid).children[0].value.trim();
+		var conditional = document.getElementById(bid).children[1].value.trim();
 		var content= document.getElementById(bid).children[2].value;
 		return {'content':content,'namespace':namespace,'conditional':conditional};
 	};
