@@ -25,10 +25,13 @@ Bengine.extensibles.qcss = new function Qcss() {
 	};
 	
 	this.destroy = function(block) {
-		let sid = block.childNodes[2].getAttribute('data-sid');
-		let styletag = document.getElementById('qengine-styles-' + sid);
-		
-		styletag.parentNode.removeChild(styletag);
+		var sid = block.childNodes[2].getAttribute('data-sid');
+		var styletag = document.getElementById('qengine-styles-' + sid);
+		try {
+			styletag.parentNode.removeChild(styletag);
+		} catch(err) {
+			// just ignore, couldn't find tag, probably block hasn't been run yet
+		}
 	}
 	
 	this.fetchDependencies = function() {

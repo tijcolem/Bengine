@@ -36,7 +36,7 @@ Bengine.extensibles.qstore = new function Qstore() {
 			blockCond.value = bcontent['conditional'];
 		}
 		
-		storeVars.setAttribute("placeholder","Comma or newline separated variables you want to keep for the next quiz step.\nPrepend with 'perm' to keep variable permanently. Prepend with 'temp' to keep for just one step. Example: temp.namespace.variable");
+		storeVars.setAttribute("placeholder","Comma or newline separated variables you want to keep for the next quiz step.\n");
 
 		block.appendChild(blockNS);
 		block.appendChild(blockCond);

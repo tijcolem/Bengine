@@ -16,16 +16,13 @@
 		
 		<footer class="footer"></footer>
 
-		<!-- get extensions for bengine -->
-		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.core.css" defer>
-		<link rel="stylesheet" href="https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.default.css" defer>
-		
-		<!-- get bengine & blocks -->
-		<script src="js/bengine.min.js"></script>
-		
 		<!-- load bengine -->
+		<script src="js/bengine.min.js"></script>
 		<script>
 			Bengine.loadBlocks([
+				'https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.core.css',
+				'https://rawgit.com/fabien-d/alertify.js/0.3/themes/alertify.default.css',
+				'https://rawgit.com/fabien-d/alertify.js/0.3/src/alertify.js',
 				'https://RELATIVE/js/bengine-default-display.js',
 				'algovisualizer',
 				'asciimath',
