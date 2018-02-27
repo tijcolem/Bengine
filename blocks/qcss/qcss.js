@@ -25,8 +25,8 @@ Bengine.extensibles.qcss = new function Qcss() {
 	};
 	
 	this.destroy = function(block) {
-		let sid = block.childNodes[2].getAttribute('data-sid');
-		let styletag = document.getElementById('qengine-styles-' + sid);
+		var sid = block.childNodes[2].getAttribute('data-sid');
+		var styletag = document.getElementById('qengine-styles-' + sid);
 		try {
 			styletag.parentNode.removeChild(styletag);
 		} catch(err) {

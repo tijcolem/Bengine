@@ -52,8 +52,12 @@ Bengine.extensibles.d3lib = new function D3lib() {
 	};
 	
 	this.destroy = function() {
-		let style = document.getElementById(_private.sid);
-		style.parentNode.removeChild(style);
+		try {
+			var style = document.getElementById(_private.sid);
+			style.parentNode.removeChild(style);
+		} catch(err) {
+			// just ignore, couldn't find tag, probably block hasn't been run yet
+		}
 		return;
 	};
 	
