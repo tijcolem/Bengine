@@ -53,7 +53,7 @@ Bengine.extensibles.slide = new function Slide() {
 			integrity: '',
 			source: 'https://mozilla.github.io/pdf.js/build/pdf.js',
 			type: 'text/javascript',
-			wait: 'PDFJS'
+			wait: 'pdfjsLib'
 		};
 		
 		return [pdfjs];
@@ -70,7 +70,7 @@ Bengine.extensibles.slide = new function Slide() {
 
 		/* if block was just made, don't try to load pdf */
 		if (!thisBlock.p.emptyObject(bcontent)) {
-			PDFJS.getDocument(bcontent['url']).then(function(pdfObj) {
+			pdfjsLib.getDocument(bcontent['url']).then(function(pdfObj) {
 				_private.pdfObjects[bcontent['url']] = pdfObj;
 
 				var tag = block.childNodes[0];
@@ -113,7 +113,7 @@ Bengine.extensibles.slide = new function Slide() {
 		var objCopy = this;
 		if(data !== null) {
 			/* add the pdf to the pdfObjects array and render the first page */
-			PDFJS.getDocument(deparseBlock(data)).then(function(pdfObj) {
+			pdfjsLib.getDocument(deparseBlock(data)).then(function(pdfObj) {
 
 				_private.pdfObjects[data] = pdfObj;
 
@@ -145,7 +145,7 @@ Bengine.extensibles.slide = new function Slide() {
 
 		/* if block was just made, don't try to load pdf */
 		if (bcontent !== "") {
-			PDFJS.getDocument(content).then(function(pdfObj) {
+			pdfjsLib.getDocument(content).then(function(pdfObj) {
 				_private.pdfObjects[content] = pdfObj;
 
 				var tag = block.childNodes[0];
