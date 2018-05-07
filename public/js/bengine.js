@@ -407,7 +407,21 @@ function Bengine(options,extensions) {
 	
 		return url;
 	};
-	
+  
+         // read stored Cookie by name and return value
+          _private.helper.readCookie = function(name) {
+                                                
+                var nameEQ = name + "=";
+                var ca = document.cookie.split(';');          
+                for(var i=0;i < ca.length;i++) {                                         
+                        var c = ca[i];
+                        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+                        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+                }                                                                                        
+                return null;                                      
+                                                                                                                                     
+         }                                                                
+                                    
 	_private.helper.retrieveResource = function(path) {
 		var promise = new Promise(function(resolve,reject) {
 			var xmlhttp = new XMLHttpRequest();
@@ -727,7 +741,11 @@ function Bengine(options,extensions) {
 		_private.pagePath = pagePath;
 		
 		if(pageData === null) {
-			var fpromise = _private.helper.retrieveResource("/content/" + pagePath + "/bengine.json");
+
+                        var file_prefix = _private.helper.readCookie("filename");
+                                                        
+                        var fpromise = _private.helper.retrieveResource("/content/" + pagePath + "/" + file_prefix +  "_bengine.json");
+
 			fpromise.then(function(result) {
 				dataObj = JSON.parse(result.data.file);
 				rpageData = [];
@@ -994,7 +1012,11 @@ function Bengine(options,extensions) {
 		_private.pagePath = pagePath;
 		
 		if(pageData === null) {
-			var fpromise = _private.helper.retrieveResource("/content/" + pagePath + "/bengine.json");
+ 
+                        var file_prefix = _private.helper.readCookie("filename");
+                                                        
+                        var fpromise = _private.helper.retrieveResource("/content/" + pagePath + "/" + file_prefix +  "_bengine.json");
+
 			fpromise.then(function(result) {
 				dataObj = JSON.parse(result.data.file);
 				rpageData = [];
@@ -1193,7 +1215,11 @@ function Bengine(options,extensions) {
 		_private.pagePath = pagePath;
 		
 		if(pageData === null) {
-			var fpromise = _private.helper.retrieveResource("/content/" + pagePath + "/bengine.json");
+
+                        var file_prefix = _private.helper.readCookie("filename");
+                                                        
+                        var fpromise = _private.helper.retrieveResource("/content/" + pagePath + "/" + file_prefix +  "_bengine.json");
+
 			fpromise.then(function(result) {
 				dataObj = JSON.parse(result.data.file);
 				rpageData = [];
