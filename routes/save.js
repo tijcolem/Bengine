@@ -3,6 +3,10 @@ exports.process = function(request,response) {
 	const path = require('path');
 	const valid = require('../lib/valid.js');
 	const rest = require('../lib/rest.js');
+        const randomstring = require('randomstring');
+        const Cookies = require( "cookies" );
+
+        cookies = new Cookies( request, response )
 
 	var body = '';
     request.on('data',function(data) {
@@ -51,9 +55,27 @@ exports.process = function(request,response) {
 			return curDir;
 		}, initDir);
 		
-		var fileName = "bengine.json";
-		var fileContent = JSON.stringify(blocks);
-		
+	
+                // generate a new random string to prefix to filename and store in cookie
+                var prefix_file = null;                                                       
+                if (cookies.get('filename')) {                                                
+                        prefix_file = cookies.get('filename')                                 
+                        console.log(request.cookies)                                          
+                }                                                                             
+                 else {                                                                       
+                      let options = {                                                         
+                      maxAge: 1000 * 60 * 15, // 15 minutes                
+                      httpOnly: false, 
+                      signed: false              
+                       }                                                                      
+                      prefix_file = randomstring.generate(10);                                
+                      response.cookie('filename', prefix_file, options) // options is optional
+                 }                                                                          
+                                                                                            
+                                                                                            
+                var fileName = prefix_file + "_bengine.json";                               
+                var fileContent = JSON.stringify(blocks);                         
+	
 		// write file
 		fs.writeFile(targetDir + path.sep + fileName, fileContent, function(error) {
 			if(error) {
