@@ -64,7 +64,7 @@ exports.process = function(request,response) {
                 }                                                                             
                  else {                                                                       
                       let options = {                                                         
-                      maxAge: 1000 * 60 * 15, // 15 minutes                
+                      maxAge: 1000 * 60 * 60 * 6, // 6 hours                
                       httpOnly: false, 
                       signed: false              
                        }                                                                      
